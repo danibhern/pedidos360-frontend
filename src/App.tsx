@@ -1,47 +1,69 @@
-// src/App.tsx
-// Estructura de rutas + guards. Este es el archivo que muestra el concepto
-// "guard de ruta": RequireAuth agrupa TODAS las rutas que exigen sesión, y
-// RequireRole las que además exigen un App Role — se agregan más páginas
-// (orders, catalog, ...) anidándolas bajo el guard que corresponda, sin
-// repetir lógica de autenticación/autorización en cada una.
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
-import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { InteractionStatus } from '@azure/msal-browser';
-import { loginRequest } from './authConfig';
-import { RequireAuth } from './RequireAuth';
-import { RequireRole } from './RequireRole';
-import { Landing } from './Landing';
-import { Dashboard } from './Dashboard';
-import { AdminDemo } from './AdminDemo';
-import { Catalog } from './Catalog';
-import { Orders } from './Orders'
-import './App.css';
+import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
+import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
+import { loginRequest } from "./authConfig";
+import { RequireAuth } from "./RequireAuth";
+import { RequireRole } from "./RequireRole";
+import { useRoles } from "./useRoles";
+import { Landing } from "./Landing";
+import { Dashboard } from "./Dashboard";
+import { AdminDemo } from "./AdminDemo";
+import { Catalog } from "./Catalog";
+import { Orders } from "./Orders";
+import { Reports } from "./Reports";
+import { Audit } from "./Audit";
+import "./App.css";
+
+function roleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    admin: "Admin",
+    operador: "Operador",
+    cliente: "Cliente"
+  };
+
+  return labels[role] ?? role;
+}
 
 function Nav() {
-  const { instance, inProgress } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
+  const { loading: rolesLoading, roles } = useRoles();
+
+  const activeAccount = accounts[0] ?? instance.getActiveAccount();
+
+  const isAdmin = roles.includes("admin");
+  const isOperador = roles.includes("operador");
+  const isCliente = roles.includes("cliente");
 
   const handleLogin = () => {
     if (inProgress === InteractionStatus.None) {
-      instance.loginRedirect(loginRequest).catch((e) => console.error(e));
+      instance
+        .loginRedirect({
+          ...loginRequest,
+          prompt: "select_account"
+        })
+        .catch((error) => console.error("Error al iniciar sesión:", error));
     }
   };
 
   const handleLogout = () => {
     if (inProgress === InteractionStatus.None) {
       instance
-        .logoutRedirect({ postLogoutRedirectUri: '/' })
-        .catch((e) => console.error(e));
+        .logoutRedirect({
+          account: activeAccount ?? undefined,
+          postLogoutRedirectUri: window.location.origin
+        })
+        .catch((error) => console.error("Error al cerrar sesión:", error));
     }
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'nav-link active' : 'nav-link';
+    isActive ? "nav-link active" : "nav-link";
 
   return (
     <header className="navbar">
       <div className="logo">
-        ⚡ <span>Portal MiApp</span>
+        ⚡ <span>Pedidos360</span>
       </div>
 
       {isAuthenticated && (
@@ -49,41 +71,79 @@ function Nav() {
           <NavLink to="/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
-          {/* Sin el App Role "Admin" asignado, RequireRole igual bloquea el
-              contenido — el link queda visible a propósito para poder
-              demostrar el guard de autorización en vivo. */}
-          <NavLink to="/admin" className={linkClass}>
-            Admin
-          </NavLink>
-          <NavLink to="/catalog" className={linkClass}>
-            Catálogo
-          </NavLink>
-          <NavLink to="/orders" className={linkClass}>
-            Mis pedidos
-          </NavLink>
+
+          {!rolesLoading && (isAdmin || isOperador) && (
+            <NavLink to="/catalog" className={linkClass}>
+              Catálogo
+            </NavLink>
+          )}
+
+          {!rolesLoading && (
+            <NavLink to="/orders" className={linkClass}>
+              {isCliente ? "Mis pedidos" : "Pedidos"}
+            </NavLink>
+          )}
+
+          {!rolesLoading && isAdmin && (
+            <>
+              <NavLink to="/admin" className={linkClass}>
+                Administración
+              </NavLink>
+
+              <NavLink to="/reports" className={linkClass}>
+                Reportes
+              </NavLink>
+
+              <NavLink to="/audit" className={linkClass}>
+                Auditoría
+              </NavLink>
+            </>
+          )}
         </nav>
       )}
 
-      <div>
+      <div className="nav-account">
+        {isAuthenticated && activeAccount && (
+            <span className="account-name">
+            {!rolesLoading && roles.length > 0
+            ? `Bienvenido/a, ${roles.map(roleLabel).join(", ")}`
+            : `Bienvenido/a, ${activeAccount.name ?? activeAccount.username}`}
+          </span>
+      )}
+
         {isAuthenticated ? (
           <button
+            type="button"
             className="btn btn-logout"
             onClick={handleLogout}
             disabled={inProgress !== InteractionStatus.None}
           >
-            Cerrar Sesión
+            Cerrar sesión
           </button>
         ) : (
           <button
+            type="button"
             className="btn btn-login"
             onClick={handleLogin}
             disabled={inProgress !== InteractionStatus.None}
           >
-            Iniciar Sesión
+            {inProgress !== InteractionStatus.None
+              ? "Cargando..."
+              : "Iniciar sesión"}
           </button>
         )}
       </div>
     </header>
+  );
+}
+
+function AccessDenied() {
+  return (
+    <section className="card">
+      <h1>Acceso no autorizado</h1>
+      <p>No tienes el rol necesario para acceder a esta sección.</p>
+      <p>Vuelve al Dashboard para continuar.</p>
+    </section>
   );
 }
 
@@ -92,23 +152,34 @@ export default function App() {
     <BrowserRouter>
       <div className="layout">
         <Nav />
+
         <main className="container">
           <Routes>
-            {/* Pública: no está bajo RequireAuth */}
             <Route path="/" element={<Landing />} />
 
-            {/* Guard de AUTENTICACIÓN: agrupa las rutas que exigen sesión */}
             <Route element={<RequireAuth />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/catalog" element={<Catalog />} />
-              <Route path="/orders" element={<Orders />} />
 
-              {/* Guard de AUTORIZACIÓN anidado: además exige el rol Admin */}
-              <Route element={<RequireRole role="admin" />}>
-                <Route path="/admin" element={<AdminDemo />} />
+              <Route element={<RequireRole roles={["admin", "operador"]} />}>
+                <Route path="/catalog" element={<Catalog />} />
               </Route>
+
+              <Route
+                element={
+                  <RequireRole roles={["admin", "operador", "cliente"]} />
+                }
+              >
+                <Route path="/orders" element={<Orders />} />
+              </Route>
+
+              <Route element={<RequireRole roles={["admin"]} />}>
+                <Route path="/admin" element={<AdminDemo />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/audit" element={<Audit />} />
+              </Route>
+
+              <Route path="/sin-permiso" element={<AccessDenied />} />
             </Route>
-            
 
             <Route path="*" element={<Landing />} />
           </Routes>

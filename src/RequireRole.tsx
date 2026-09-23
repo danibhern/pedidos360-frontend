@@ -1,28 +1,28 @@
-import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
-import { useMsal } from "@azure/msal-react";
-import { acquireApiToken } from "./api/client"; // el mismo helper de la sección 6
-import { decodeJwt } from "./lib/jwt";
+import { Navigate, Outlet } from "react-router-dom";
+import { useIsAuthenticated } from "@azure/msal-react";
+import { useRoles, type AppRole } from "./useRoles";
 
-export function RequireRole({ role }: { role: string }) {
-  const { instance, accounts } = useMsal();
-  const account = accounts[0] ?? instance.getActiveAccount();
-  const [status, setStatus] = useState<"loading" | "allowed" | "denied">("loading");
+type RequireRoleProps = {
+  roles: AppRole[];
+};
 
-  useEffect(() => {
-    if (!account) return;
-    let cancelled = false;
-    acquireApiToken(instance, account)
-      .then((token) => {
-        if (cancelled) return;
-        const roles = decodeJwt(token)?.roles ?? [];
-        setStatus(roles.includes(role) ? "allowed" : "denied");
-      })
-      .catch(() => !cancelled && setStatus("denied"));
-    return () => { cancelled = true; };
-  }, [instance, account, role]);
+export function RequireRole({ roles }: RequireRoleProps) {
+  const isAuthenticated = useIsAuthenticated();
+  const { loading, roles: userRoles } = useRoles();
 
-  if (!account || status === "loading") return <p>Verificando permisos…</p>;
-  if (status === "denied") return <p>Requiere el rol {role}.</p>;
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (loading) {
+    return <p>Cargando permisos…</p>;
+  }
+
+  const isAllowed = roles.some((role) => userRoles.includes(role));
+
+  if (!isAllowed) {
+    return <Navigate to="/sin-permiso" replace />;
+  }
+
   return <Outlet />;
 }

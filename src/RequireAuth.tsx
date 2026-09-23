@@ -1,17 +1,19 @@
-import { Outlet } from "react-router-dom";
-import { MsalAuthenticationTemplate } from "@azure/msal-react";
-import { InteractionType } from "@azure/msal-browser";
-import { loginRequest } from "./authConfig";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
 
 export function RequireAuth() {
-  return (
-    <MsalAuthenticationTemplate
-      interactionType={InteractionType.Redirect}
-      authenticationRequest={loginRequest}
-      loadingComponent={() => <p>Redirigiendo a inicio de sesión…</p>}
-    >
-      {/* Todo lo que cuelgue de esta ruta en App.tsx se renderiza acá */}
-      <Outlet />
-    </MsalAuthenticationTemplate>
-  );
+  const isAuthenticated = useIsAuthenticated();
+  const { inProgress } = useMsal();
+  const location = useLocation();
+
+  if (inProgress !== InteractionStatus.None) {
+    return <p>Comprobando sesión…</p>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace state={{ from: location.pathname }} />;
+  }
+
+  return <Outlet />;
 }

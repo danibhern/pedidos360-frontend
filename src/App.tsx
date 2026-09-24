@@ -14,6 +14,7 @@ import { Reports } from "./Reports";
 import { Audit } from "./Audit";
 import "./App.css";
 
+
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {
     admin: "Admin",
@@ -21,19 +22,24 @@ function roleLabel(role: string): string {
     cliente: "Cliente"
   };
 
+
   return labels[role] ?? role;
 }
+
 
 function Nav() {
   const { instance, accounts, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const { loading: rolesLoading, roles } = useRoles();
 
+
   const activeAccount = accounts[0] ?? instance.getActiveAccount();
+
 
   const isAdmin = roles.includes("admin");
   const isOperador = roles.includes("operador");
   const isCliente = roles.includes("cliente");
+
 
   const handleLogin = () => {
     if (inProgress === InteractionStatus.None) {
@@ -46,6 +52,7 @@ function Nav() {
     }
   };
 
+
   const handleLogout = () => {
     if (inProgress === InteractionStatus.None) {
       instance
@@ -57,8 +64,10 @@ function Nav() {
     }
   };
 
+
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "nav-link active" : "nav-link";
+
 
   return (
     <header className="navbar">
@@ -66,11 +75,13 @@ function Nav() {
         ⚡ <span>Pedidos360</span>
       </div>
 
+
       {isAuthenticated && (
         <nav className="nav-links">
           <NavLink to="/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
+
 
           {!rolesLoading && (isAdmin || isOperador) && (
             <NavLink to="/catalog" className={linkClass}>
@@ -78,11 +89,13 @@ function Nav() {
             </NavLink>
           )}
 
+
           {!rolesLoading && (
             <NavLink to="/orders" className={linkClass}>
               {isCliente ? "Mis pedidos" : "Pedidos"}
             </NavLink>
           )}
+
 
           {!rolesLoading && isAdmin && (
             <>
@@ -90,9 +103,11 @@ function Nav() {
                 Administración
               </NavLink>
 
+
               <NavLink to="/reports" className={linkClass}>
                 Reportes
               </NavLink>
+
 
               <NavLink to="/audit" className={linkClass}>
                 Auditoría
@@ -102,6 +117,7 @@ function Nav() {
         </nav>
       )}
 
+
       <div className="nav-account">
         {isAuthenticated && activeAccount && (
             <span className="account-name">
@@ -110,6 +126,7 @@ function Nav() {
             : `Bienvenido/a, ${activeAccount.name ?? activeAccount.username}`}
           </span>
       )}
+
 
         {isAuthenticated ? (
           <button
@@ -137,6 +154,7 @@ function Nav() {
   );
 }
 
+
 function AccessDenied() {
   return (
     <section className="card">
@@ -147,22 +165,27 @@ function AccessDenied() {
   );
 }
 
+
 export default function App() {
   return (
     <BrowserRouter>
       <div className="layout">
         <Nav />
 
+
         <main className="container">
           <Routes>
             <Route path="/" element={<Landing />} />
 
+
             <Route element={<RequireAuth />}>
               <Route path="/dashboard" element={<Dashboard />} />
+
 
               <Route element={<RequireRole roles={["admin", "operador"]} />}>
                 <Route path="/catalog" element={<Catalog />} />
               </Route>
+
 
               <Route
                 element={
@@ -172,14 +195,17 @@ export default function App() {
                 <Route path="/orders" element={<Orders />} />
               </Route>
 
+
               <Route element={<RequireRole roles={["admin"]} />}>
                 <Route path="/admin" element={<AdminDemo />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/audit" element={<Audit />} />
               </Route>
 
+
               <Route path="/sin-permiso" element={<AccessDenied />} />
             </Route>
+
 
             <Route path="*" element={<Landing />} />
           </Routes>

@@ -168,3 +168,51 @@ export async function createOrder(
 
   return data.order as Order;
 }
+
+// dani esto lo tiene en el lambda de catalog ??
+export async function createProduct(
+  instance: IPublicClientApplication,
+  account: AccountInfo,
+  product: { name: string; description: string; price: number; stock: number }
+): Promise<CatalogProduct> {
+  const accessToken = await getAccessToken(instance, account);
+
+  const response = await fetch(`${apiConfig.baseUrl}/catalog`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(product)
+  });
+
+  if (!response.ok) {
+    throw new Error(`No se pudo crear el producto (${response.status}).`);
+  }
+
+  return (await response.json()) as CatalogProduct;
+}
+
+export async function updateProduct(
+  instance: IPublicClientApplication,
+  account: AccountInfo,
+  productId: string,
+  product: { name: string; description: string; price: number; stock: number }
+): Promise<CatalogProduct> {
+  const accessToken = await getAccessToken(instance, account);
+
+  const response = await fetch(`${apiConfig.baseUrl}/catalog/${productId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(product)
+  });
+
+  if (!response.ok) {
+    throw new Error(`No se pudo actualizar el producto (${response.status}).`);
+  }
+
+  return (await response.json()) as CatalogProduct;
+}

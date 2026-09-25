@@ -1,0 +1,339 @@
+/* ============================================================================
+   LOGIN
+   Dos piezas:
+   1) .btn-login / .btn-logout -> botones reales del navbar (App.tsx)
+   2) .login-*                 -> pantalla de login con tarjeta glass
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1) Botones y sesión del navbar
+   --------------------------------------------------------------------------- */
+
+.nav-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Sin esto el saludo heredaba el color oscuro del body sobre el navbar
+   oscuro y quedaba ilegible. */
+.account-name {
+  max-width: 260px;
+  overflow: hidden;
+  color: var(--green-100);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-login {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--green-200) 0%, var(--green-100) 100%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.btn-login::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.75) 50%,
+    transparent 80%
+  );
+  transform: translateX(-130%);
+  transition: transform 620ms ease;
+}
+
+.btn-login:not(:disabled):hover {
+  background: #ffffff;
+  box-shadow: 0 9px 22px rgba(0, 0, 0, 0.26);
+  transform: translateY(-2px);
+}
+
+.btn-login:not(:disabled):hover::after {
+  transform: translateX(130%);
+}
+
+.btn-login:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn-logout {
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.btn-logout:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.38);
+  transform: translateY(-2px);
+}
+
+/* ---------------------------------------------------------------------------
+   2) Pantalla de login
+   --------------------------------------------------------------------------- */
+
+.login-page {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 2rem 1rem;
+  isolation: isolate;
+}
+
+/* Blobs decorativos de fondo */
+
+.login-blob {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.login-blob-1 {
+  top: -70px;
+  left: -50px;
+  width: 360px;
+  height: 360px;
+  background: var(--green-200);
+  animation: login-blob-1 16s ease-in-out infinite alternate;
+}
+
+.login-blob-2 {
+  right: -70px;
+  bottom: -110px;
+  width: 440px;
+  height: 440px;
+  background: var(--green-100);
+  animation: login-blob-2 20s ease-in-out infinite alternate;
+}
+
+.login-blob-3 {
+  top: 38%;
+  right: 10%;
+  width: 240px;
+  height: 240px;
+  background: var(--green-500);
+  opacity: 0.2;
+  animation: login-blob-3 13s ease-in-out infinite alternate;
+}
+
+/* Tarjeta glassmorphism */
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 18px 52px rgba(5, 46, 34, 0.2);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: login-card-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 1.25rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--green-500) 0%, var(--green-800) 100%);
+  border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(5, 150, 105, 0.4);
+  font-size: 2.3rem;
+  animation: login-logo-float 3.2s ease-in-out infinite;
+}
+
+.login-brand {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 4px 13px;
+  color: var(--green-800);
+  background: rgba(209, 250, 229, 0.85);
+  border: 1px solid var(--green-200);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.login-title {
+  margin: 0 0 0.5rem;
+  color: var(--green-950);
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.login-subtitle {
+  margin: 0 0 1.75rem;
+  color: var(--ink-700);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.login-note {
+  margin-top: 1.35rem;
+  color: var(--ink-500);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* Botón de Microsoft */
+
+.btn-microsoft {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: #323130;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.btn-microsoft:hover {
+  background-color: #f5f5f4;
+  border-color: #b9bdc1;
+  box-shadow: 0 8px 18px rgba(5, 46, 34, 0.16);
+  transform: translateY(-2px);
+}
+
+.btn-microsoft:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-microsoft:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-microsoft-icon {
+  flex-shrink: 0;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Keyframes
+   --------------------------------------------------------------------------- */
+
+@keyframes login-blob-1 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(64px, 44px) scale(1.16);
+  }
+}
+
+@keyframes login-blob-2 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(-54px, -48px) scale(0.9);
+  }
+}
+
+@keyframes login-blob-3 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(-48px, 38px) scale(1.28);
+  }
+}
+
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes login-logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Accesibilidad: sin animaciones si el usuario las desactiva
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .login-blob,
+  .login-card,
+  .login-logo,
+  .btn-microsoft,
+  .btn-login::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Responsividad
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .account-name {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2.25rem 1.5rem;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+}

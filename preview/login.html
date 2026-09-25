@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview · Login</title>
+    <link rel="stylesheet" href="../src/App.css" />
+    <style>
+      .preview-label {
+        display: inline-block;
+        margin: 40px 0 0;
+        padding: 5px 12px;
+        color: #5b21b6;
+        background: #ede9fe;
+        border: 1px solid #ddd6fe;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ===== Estado real del navbar: visitante sin sesión ===== -->
+      <header class="navbar">
+        <div class="logo">⚡ <span>Pedidos360</span></div>
+
+        <nav class="nav-links"></nav>
+
+        <div class="nav-account">
+          <button type="button" class="btn btn-login">Iniciar sesión</button>
+        </div>
+      </header>
+
+      <main class="container">
+        <span class="preview-label">Pantalla de login (.login-*) — lista para cuando exista un Login.tsx</span>
+
+        <div class="login-page">
+          <span class="login-blob login-blob-1"></span>
+          <span class="login-blob login-blob-2"></span>
+          <span class="login-blob login-blob-3"></span>
+
+          <div class="login-card">
+            <div class="login-logo">⚡</div>
+            <span class="login-brand">Pedidos360</span>
+            <h2 class="login-title">Bienvenido de vuelta</h2>
+            <p class="login-subtitle">
+              Inicia sesión con tu cuenta de Microsoft para ver el estado de tus
+              pedidos en tiempo real.
+            </p>
+
+            <button type="button" class="btn btn-microsoft btn-block">
+              <svg
+                class="btn-microsoft-icon"
+                width="21"
+                height="21"
+                viewBox="0 0 21 21"
+                aria-hidden="true"
+              >
+                <rect x="0" y="0" width="10" height="10" fill="#f25022" />
+                <rect x="11" y="0" width="10" height="10" fill="#7fba00" />
+                <rect x="0" y="11" width="10" height="10" fill="#00a4ef" />
+                <rect x="11" y="11" width="10" height="10" fill="#ffb900" />
+              </svg>
+              Iniciar sesión con Microsoft
+            </button>
+
+            <p class="login-note">
+              Tus datos se cifran y solo se usan para gestionar tus pedidos.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

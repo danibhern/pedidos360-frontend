@@ -24,7 +24,11 @@
   width: 74px;
   height: 5px;
   content: "";
-  background: linear-gradient(90deg, var(--green-600), var(--green-400, #34d399));
+  background: linear-gradient(
+    90deg,
+    var(--green-600),
+    var(--green-400, #34d399)
+  );
   border-radius: 999px;
 }
 

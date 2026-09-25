@@ -1,14 +1,3 @@
-/* ============================================================================
-   LOGIN
-   Dos piezas:
-   1) .btn-login / .btn-logout -> botones reales del navbar (App.tsx)
-   2) .login-*                 -> pantalla de login con tarjeta glass
-   ============================================================================ */
-
-/* ---------------------------------------------------------------------------
-   1) Botones y sesión del navbar
-   --------------------------------------------------------------------------- */
-
 .nav-account {
   display: flex;
   align-items: center;
@@ -30,7 +19,11 @@
 .btn-login {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--green-200) 0%, var(--green-100) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--green-200) 0%,
+    var(--green-100) 100%
+  );
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -159,7 +152,11 @@
   height: 74px;
   margin: 0 auto 1.25rem;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--green-500) 0%, var(--green-800) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--green-500) 0%,
+    var(--green-800) 100%
+  );
   border-radius: 22px;
   box-shadow: 0 10px 24px rgba(5, 150, 105, 0.4);
   font-size: 2.3rem;

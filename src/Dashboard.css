@@ -1,282 +1,285 @@
-/* ============================================================================
-   ESTILOS GENERALES Y LAYOUT
-   ============================================================================ */
+/* src/Dashboard.css */
 .dashboard-container {
-  padding: 28px 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 48px;
-  color: #059669;
-  font-weight: 600;
-}
-
-/* ============================================================================
-   TARJETA DE BIENVENIDA (HEADER)
-   ============================================================================ */
-.welcome-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
+/* ==========================================================================
+   BANNER DE BIENVENIDA (CUADRADO SUPERIOR)
+   ========================================================================== */
+.welcome-banner {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 28px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
-  transition: box-shadow 0.2s ease;
+  gap: 16px;
+  padding: 18px 22px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.welcome-card:hover {
-  box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.06);
-}
-
-.welcome-card .avatar {
-  width: 54px;
-  height: 54px;
-  /* Degradado verde moderno */
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+.welcome-avatar {
+  width: 44px;
+  height: 44px;
+  background-color: #065f46;
   color: #ffffff;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
-.welcome-info h2 {
+.welcome-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #064e3b;
+}
+
+.welcome-info p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.welcome-info p span.role-highlight {
+  color: #047857;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   ENCABEZADO DE SECCIÓN + BOTÓN DESCARGAR PDF
+   ========================================================================== */
+.dashboard-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.dashboard-header-row h2 {
   margin: 0;
   color: #0f172a;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
-.welcome-info .subtitle {
-  margin: 4px 0 0 0;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.welcome-info strong {
-  color: #059669;
-}
-
-/* ============================================================================
-   BANNER Y TÍTULOS
-   ============================================================================ */
-.dashboard-banner {
-  display: flex;
-  justify-content: space-between;
+.btn-pdf {
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 20px;
-}
-
-.dashboard-banner h2 {
-  margin: 0;
-  color: #064e3b;
-  font-size: 1.4rem;
+  gap: 8px;
+  background-color: #065f46;
+  color: #ffffff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
 }
 
-/* ============================================================================
-   TARJETAS KPI (MÉTRICAS)
-   ============================================================================ */
+.btn-pdf:hover {
+  background-color: #047857;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   KPI CARDS (TARJETAS DE MÉTRICAS)
+   ========================================================================== */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
-  margin-bottom: 28px;
 }
 
 .kpi-card {
   background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 22px;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* Efecto de elevación interactivo */
 .kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
-  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* BORDE VERDE IZQUIERDO PARA 'PEDIDOS EN CAMINO' */
+.kpi-card.border-accent {
+  border-left: 4px solid #059669;
 }
 
 .kpi-title {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #64748b;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 12px;
+  letter-spacing: 0.5px;
 }
 
 .kpi-value {
-  font-size: 1.9rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: #0f172a;
-  letter-spacing: -0.03em;
 }
 
-/* Acentos de color en borde izquierdo */
+/* Tarjeta destacada verde */
 .kpi-card.highlight {
-  border-left: 4px solid #10b981;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border: none;
+  color: #ffffff;
 }
 
+.kpi-card.highlight .kpi-title {
+  color: #d1fae5;
+}
+
+.kpi-card.highlight .kpi-value {
+  color: #ffffff;
+}
+
+/* Tarjeta de alertas operativas */
 .kpi-card.highlight-orange {
-  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
 }
 
-.kpi-card.highlight-red {
-  border-left: 4px solid #ef4444;
+.kpi-card.highlight-orange .kpi-value {
+  color: #b45309;
 }
 
-/* ============================================================================
-   TABLA Y SECCIONES
-   ============================================================================ */
+/* ==========================================================================
+   SECCIONES Y TABLAS
+   ========================================================================== */
 .dashboard-section {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 24px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .dashboard-section h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #064e3bed;
-  font-size: 1.15rem;
-  font-weight: 900;
-  font-family: 'DM Sans';
+  margin: 0 0 18px 0;
+  color: #064e3b;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .dashboard-table {
   width: 100%;
   border-collapse: collapse;
+  text-align: left;
 }
 
 .dashboard-table th {
-  background-color: #f8fafc;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  background-color: #f0fdf4;
+  color: #064e3b;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.dashboard-table th:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-
-.dashboard-table th:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-bottom: 2px solid #a7f3d0;
 }
 
 .dashboard-table td {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
   color: #334155;
-  font-size: 0.925rem;
-}
-
-/* Transición suave al pasar el cursor sobre las filas */
-.dashboard-table tbody tr {
-  transition: background-color 0.15s ease;
 }
 
 .dashboard-table tbody tr:hover {
   background-color: #f8fafc;
 }
 
-.dashboard-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* ============================================================================
-   BOTONES Y BADGES
-   ============================================================================ */
-.btn-primary {
-  background-color: #059669;
-  color: #ffffff;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.2);
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: #047857;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-secondary-sm {
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.825rem;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary-sm:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
-}
-
-/* Badges estilizados estilo "Pill" */
+/* BADGES */
 .badge {
-  display: inline-block;
-  padding: 4px 12px;
+  padding: 5px 12px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.badge-warning { background-color: #fef3c7; color: #92400e; }
+.badge-info { background-color: #d1fae5; color: #065f46; }
+.badge-primary { background-color: #dbeafe; color: #1e40af; }
+.badge-success { background-color: #10b981; color: #ffffff; }
+.badge-danger { background-color: #ffe4e6; color: #9f1239; }
+
+/* STEPPER */
+.stepper-container {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: 30px 0 10px 0;
+}
+
+.stepper-container::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+.stepper-step {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 0 8px;
+}
+
+.step-number {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.step-label {
+  font-size: 0.78rem;
   font-weight: 600;
+  color: #64748b;
 }
 
-.badge-success {
-  background-color: #d1fae5;
-  color: #065f46;
+.stepper-step.step-completed .step-number {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4);
 }
 
-.badge-warning {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.badge-danger {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.badge-info {
-  background-color: #e0f2fe;
-  color: #075985;
+.stepper-step.step-completed .step-label {
+  color: #064e3b;
 }

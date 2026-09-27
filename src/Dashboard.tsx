@@ -10,93 +10,112 @@ const clp = new Intl.NumberFormat('es-CL', {
   maximumFractionDigits: 0
 });
 
-// ============================================================================
-// DATOS FICTICIOS (MOCK DATA)
-// ============================================================================
-const MOCK_CLIENT_DATA = {
-  totalPedidos: 8,
-  pedidosEnCamino: 2,
-  totalGastado: 184900,
-  ultimosPedidos: [
-    { id: 'PED-8821', fecha: '2026-09-22', total: 45000, estado: 'En camino' },
-    { id: 'PED-8790', fecha: '2026-09-18', total: 89900, estado: 'Entregado' },
-    { id: 'PED-8651', fecha: '2026-09-10', total: 50000, estado: 'Entregado' }
-  ]
+export type OrderStatus =
+  | 'CREADO'
+  | 'ACEPTADO'
+  | 'EN_PREPARACION'
+  | 'DESPACHADO'
+  | 'ENTREGADO'
+  | 'CANCELADO';
+
+const STATUS_LABELS: Record<OrderStatus, { text: string; badgeClass: string }> = {
+  CREADO: { text: 'Creado (Pendiente)', badgeClass: 'badge-warning' },
+  ACEPTADO: { text: 'Aceptado', badgeClass: 'badge-info' },
+  EN_PREPARACION: { text: 'En Preparación', badgeClass: 'badge-info' },
+  DESPACHADO: { text: 'Despachado', badgeClass: 'badge-primary' },
+  ENTREGADO: { text: 'Entregado', badgeClass: 'badge-success' },
+  CANCELADO: { text: 'Cancelado', badgeClass: 'badge-danger' }
 };
 
-const MOCK_OPERATOR_DATA = {
-  pendientesDespacho: 14,
-  stockCriticoCount: 3,
-  procesadosHoy: 28,
-  colaDespacho: [
-    { id: 'PED-8825', cliente: 'Empresa Alfa SpA', items: 5, prioridad: 'Alta' },
-    { id: 'PED-8824', cliente: 'Juan Pérez', items: 2, prioridad: 'Normal' },
-    { id: 'PED-8823', cliente: 'Tech Solutions', items: 12, prioridad: 'Alta' }
-  ]
-};
+// ============================================================================
+// DATOS MOCK
+// ============================================================================
 
-const MOCK_ADMIN_DATA = {
-  ventasMes: 18450000,
-  usuariosActivos: 142,
+const ADMIN_KPIS = {
+  ventasTotales: 18450000,
   pedidosTotales: 1280,
-  eficienciaOperativa: '98.4%',
-  resumenMensual: [
-    { mes: 'Junio', ventas: 12000000, pedidos: 890 },
-    { mes: 'Julio', ventas: 15200000, pedidos: 1050 },
-    { mes: 'Agosto', ventas: 18450000, pedidos: 1280 }
+  usuariosActivos: 142,
+  resumenVentasHora: [
+    { hora: '09:00', ventas: 1250000, pedidos: 24 },
+    { hora: '12:00', ventas: 3400000, pedidos: 68 },
+    { hora: '15:00', ventas: 5100000, pedidos: 95 },
+    { hora: '18:00', ventas: 8700000, pedidos: 150 }
+  ]
+};
+
+const OPERATOR_DATA = {
+  pedidosPendientesCount: 6,
+  pedidosEnCursoCount: 12,
+  colaProcesamiento: [
+    { id: 'PED-9012', cliente: 'Tech Solutions SpA', items: 5, estado: 'CREADO' as OrderStatus, fecha: '2026-09-27 15:30' },
+    { id: 'PED-9011', cliente: 'Empresa Alfa Ltda', items: 2, estado: 'ACEPTADO' as OrderStatus, fecha: '2026-09-27 15:10' },
+    { id: 'PED-9010', cliente: 'Juan Pérez', items: 1, estado: 'EN_PREPARACION' as OrderStatus, fecha: '2026-09-27 14:45' },
+    { id: 'PED-9009', cliente: 'Comercial Beta', items: 8, estado: 'CREADO' as OrderStatus, fecha: '2026-09-27 14:20' }
+  ]
+};
+
+const CUSTOMER_DATA = {
+  misPedidosTotales: 8,
+  pedidosEnCamino: 2,
+  totalInvertido: 184900,
+  pedidoActivo: {
+    id: 'PED-8821',
+    estado: 'DESPACHADO' as OrderStatus,
+    fechaCreacion: '2026-09-27 10:15',
+    total: 45000,
+    etapas: [
+      { nombre: 'CREADO', completado: true },
+      { nombre: 'ACEPTADO', completado: true },
+      { nombre: 'EN_PREPARACION', completado: true },
+      { nombre: 'DESPACHADO', completado: true },
+      { nombre: 'ENTREGADO', completado: false }
+    ]
+  },
+  ultimosPedidos: [
+    { id: 'PED-8821', fecha: '2026-09-27', total: 45000, estado: 'DESPACHADO' as OrderStatus },
+    { id: 'PED-8790', fecha: '2026-09-18', total: 89900, estado: 'ENTREGADO' as OrderStatus },
+    { id: 'PED-8651', fecha: '2026-09-10', total: 50000, estado: 'ENTREGADO' as OrderStatus }
   ]
 };
 
 // ============================================================================
 // VISTAS SEGÚN ROL
 // ============================================================================
-function ClientDashboard() {
+
+function AdminDashboardView() {
   return (
     <div className="dashboard-content">
-      <div className="dashboard-banner">
-        <h2>Mi Panel de Compras</h2>
-        <button className="btn-primary" onClick={() => alert('Descargando reporte PDF…')}>
-          📄 Descargar Historial (PDF)
-        </button>
-      </div>
-
       <div className="kpi-grid">
-        <div className="kpi-card">
-          <span className="kpi-title">Mis Pedidos Totales</span>
-          <span className="kpi-value">{MOCK_CLIENT_DATA.totalPedidos}</span>
-        </div>
         <div className="kpi-card highlight">
-          <span className="kpi-title">Pedidos en Camino</span>
-          <span className="kpi-value">{MOCK_CLIENT_DATA.pedidosEnCamino}</span>
+          <span className="kpi-title">Ventas Totales</span>
+          <span className="kpi-value">{clp.format(ADMIN_KPIS.ventasTotales)}</span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-title">Total Invertido</span>
-          <span className="kpi-value">{clp.format(MOCK_CLIENT_DATA.totalGastado)}</span>
+          <span className="kpi-title">Pedidos Totales</span>
+          <span className="kpi-value">{ADMIN_KPIS.pedidosTotales}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-title">Usuarios Activos (IDaaS)</span>
+          <span className="kpi-value">{ADMIN_KPIS.usuariosActivos}</span>
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <h3>Estado de Mis Últimos Pedidos</h3>
+      <div className="dashboard-section" style={{ marginTop: '24px' }}>
+        <h3>Ventas y Pedidos por Hora</h3>
         <table className="dashboard-table">
           <thead>
             <tr>
-              <th>ID Pedido</th>
-              <th>Fecha</th>
-              <th>Monto</th>
-              <th>Estado</th>
+              <th>Tramo Horario</th>
+              <th>Pedidos Procesados</th>
+              <th>Monto Facturado</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_CLIENT_DATA.ultimosPedidos.map((p) => (
-              <tr key={p.id}>
-                <td><strong>{p.id}</strong></td>
-                <td>{p.fecha}</td>
-                <td>{clp.format(p.total)}</td>
-                <td>
-                  <span className={`badge ${p.estado === 'En camino' ? 'badge-warning' : 'badge-success'}`}>
-                    {p.estado}
-                  </span>
-                </td>
+            {ADMIN_KPIS.resumenVentasHora.map((row) => (
+              <tr key={row.hora}>
+                <td><strong>{row.hora} hrs</strong></td>
+                <td>{row.pedidos} pedidos</td>
+                <td>{clp.format(row.ventas)}</td>
               </tr>
             ))}
           </tbody>
@@ -106,61 +125,49 @@ function ClientDashboard() {
   );
 }
 
-function OperatorDashboard() {
+function OperatorDashboardView() {
   return (
     <div className="dashboard-content">
-      <div className="dashboard-banner">
-        <h2>Centro de Control Operativo</h2>
-        <button className="btn-primary" onClick={() => alert('Exportando datos a CSV…')}>
-          📊 Exportar Hoja de Ruta (CSV)
-        </button>
-      </div>
-
       <div className="kpi-grid">
         <div className="kpi-card highlight-orange">
-          <span className="kpi-title">Pendientes de Despacho</span>
-          <span className="kpi-value">{MOCK_OPERATOR_DATA.pendientesDespacho}</span>
+          <span className="kpi-title">Pedidos Pendientes (CREADO)</span>
+          <span className="kpi-value">{OPERATOR_DATA.pedidosPendientesCount}</span>
         </div>
-        <div className="kpi-card highlight-red">
-          <span className="kpi-title">Alertas Stock Crítico</span>
-          <span className="kpi-value">{MOCK_OPERATOR_DATA.stockCriticoCount}</span>
-        </div>
-        <div className="kpi-card">
-          <span className="kpi-title">Procesados Hoy</span>
-          <span className="kpi-value">{MOCK_OPERATOR_DATA.procesadosHoy}</span>
+        <div className="kpi-card highlight">
+          <span className="kpi-title">Pedidos en Curso</span>
+          <span className="kpi-value">{OPERATOR_DATA.pedidosEnCursoCount}</span>
         </div>
       </div>
 
-      <div className="dashboard-section">
-        <h3>Cola Prioritaria de Despacho</h3>
+      <div className="dashboard-section" style={{ marginTop: '24px' }}>
+        <h3>Cola de Pedidos por Procesar</h3>
         <table className="dashboard-table">
           <thead>
             <tr>
               <th>ID Pedido</th>
               <th>Cliente</th>
-              <th>Cant. Ítems</th>
-              <th>Prioridad</th>
-              <th>Acción</th>
+              <th>Fecha / Hora</th>
+              <th>Ítems</th>
+              <th>Estado Actual</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_OPERATOR_DATA.colaDespacho.map((p) => (
-              <tr key={p.id}>
-                <td><strong>{p.id}</strong></td>
-                <td>{p.cliente}</td>
-                <td>{p.items} u.</td>
-                <td>
-                  <span className={`badge ${p.prioridad === 'Alta' ? 'badge-danger' : 'badge-info'}`}>
-                    {p.prioridad}
-                  </span>
-                </td>
-                <td>
-                  <button className="btn-secondary-sm" onClick={() => alert(`Preparando pedido ${p.id}`)}>
-                    Preparar
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {OPERATOR_DATA.colaProcesamiento.map((item) => {
+              const statusInfo = STATUS_LABELS[item.estado];
+              return (
+                <tr key={item.id}>
+                  <td><strong>{item.id}</strong></td>
+                  <td>{item.cliente}</td>
+                  <td>{item.fecha}</td>
+                  <td>{item.items} u.</td>
+                  <td>
+                    <span className={`badge ${statusInfo.badgeClass}`}>
+                      {statusInfo.text}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -168,53 +175,86 @@ function OperatorDashboard() {
   );
 }
 
-function AdminDashboard() {
+function CustomerDashboardView() {
+  const { misPedidosTotales, pedidosEnCamino, totalInvertido, pedidoActivo, ultimosPedidos } = CUSTOMER_DATA;
+
   return (
     <div className="dashboard-content">
-      <div className="dashboard-banner">
-        <h2>Panel de Control General (Admin)</h2>
-        <button className="btn-primary" onClick={() => alert('Generando reporte Excel…')}>
-          📈 Reporte Consolidado (Excel)
+      {/* Encabezado con Botón Descargar PDF */}
+      <div className="dashboard-header-row">
+        <h2>Mi Panel de Compras</h2>
+        <button type="button" className="btn-pdf" onClick={() => alert('Generando PDF...')}>
+          📄 Descargar Historial (PDF)
         </button>
       </div>
 
-      <div className="kpi-grid">
+      {/* Tarjetas KPI de la Imagen */}
+      <div className="kpi-grid" style={{ marginTop: '16px', marginBottom: '24px' }}>
         <div className="kpi-card">
-          <span className="kpi-title">Ventas del Mes</span>
-          <span className="kpi-value">{clp.format(MOCK_ADMIN_DATA.ventasMes)}</span>
+          <span className="kpi-title">MIS PEDIDOS TOTALES</span>
+          <span className="kpi-value">{misPedidosTotales}</span>
         </div>
+
+        <div className="kpi-card border-accent">
+          <span className="kpi-title">PEDIDOS EN CAMINO</span>
+          <span className="kpi-value">{pedidosEnCamino}</span>
+        </div>
+
         <div className="kpi-card">
-          <span className="kpi-title">Usuarios Activos</span>
-          <span className="kpi-value">{MOCK_ADMIN_DATA.usuariosActivos}</span>
-        </div>
-        <div className="kpi-card">
-          <span className="kpi-title">Pedidos Totales</span>
-          <span className="kpi-value">{MOCK_ADMIN_DATA.pedidosTotales}</span>
-        </div>
-        <div className="kpi-card highlight">
-          <span className="kpi-title">SLA Operaciones</span>
-          <span className="kpi-value">{MOCK_ADMIN_DATA.eficienciaOperativa}</span>
+          <span className="kpi-title">TOTAL INVERTIDO</span>
+          <span className="kpi-value">{clp.format(totalInvertido)}</span>
         </div>
       </div>
 
+      {/* Seguimiento de Pedido Activo */}
+      <div className="dashboard-section" style={{ marginBottom: '24px' }}>
+        <h3>Seguimiento de tu Pedido Activo ({pedidoActivo.id})</h3>
+        <p className="subtitle" style={{ margin: '0 0 16px 0', color: '#64748b' }}>
+          Fecha de solicitud: <strong>{pedidoActivo.fechaCreacion}</strong> • Total:{' '}
+          <strong>{clp.format(pedidoActivo.total)}</strong>
+        </p>
+
+        <div className="stepper-container">
+          {pedidoActivo.etapas.map((etapa, idx) => (
+            <div
+              key={etapa.nombre}
+              className={`stepper-step ${etapa.completado ? 'step-completed' : ''}`}
+            >
+              <div className="step-number">{idx + 1}</div>
+              <span className="step-label">{STATUS_LABELS[etapa.nombre as OrderStatus]?.text || etapa.nombre}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Historial */}
       <div className="dashboard-section">
-        <h3>Rendimiento Trimestral de Ventas</h3>
+        <h3>Historial de Tus Últimos Pedidos</h3>
         <table className="dashboard-table">
           <thead>
             <tr>
-              <th>Mes</th>
-              <th>Total Pedidos</th>
-              <th>Ingresos Totales</th>
+              <th>ID Pedido</th>
+              <th>Fecha</th>
+              <th>Monto Total</th>
+              <th>Estado</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_ADMIN_DATA.resumenMensual.map((r) => (
-              <tr key={r.mes}>
-                <td><strong>{r.mes}</strong></td>
-                <td>{r.pedidos}</td>
-                <td>{clp.format(r.ventas)}</td>
-              </tr>
-            ))}
+            {ultimosPedidos.map((pedido) => {
+              const statusInfo = STATUS_LABELS[pedido.estado];
+              return (
+                <tr key={pedido.id}>
+                  <td><strong>{pedido.id}</strong></td>
+                  <td>{pedido.fecha}</td>
+                  <td>{clp.format(pedido.total)}</td>
+                  <td>
+                    <span className={`badge ${statusInfo.badgeClass}`}>
+                      {statusInfo.text}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -223,7 +263,7 @@ function AdminDashboard() {
 }
 
 // ============================================================================
-// COMPONENTE PRINCIPAL PROTEGIDO
+// COMPONENTE PRINCIPAL
 // ============================================================================
 export function Dashboard() {
   const { accounts } = useMsal();
@@ -234,32 +274,34 @@ export function Dashboard() {
   const isOperator = roles.includes('operador');
 
   if (loading) {
-    return <p className="loading-state">Cargando métricas del dashboard…</p>;
+    return <p className="loading-state">Cargando métricas de actividad…</p>;
   }
 
   return (
     <div className="dashboard-container">
-      {/* Tarjeta Superior de Bienvenida con datos Entra ID */}
-      <header className="welcome-card">
-        <div className="avatar">
-          {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+      {/* CUADRADO SUPERIOR (BANNER DE BIENVENIDA) */}
+      <div className="welcome-banner">
+        <div className="welcome-avatar">
+          {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'O'}
         </div>
         <div className="welcome-info">
-          <h2>¡Bienvenido/a, {currentUser?.name || 'Usuario'}!</h2>
-          <p className="subtitle">
-            {currentUser?.username} • Rol activo:{' '}
-            <strong>{isAdmin ? 'Administrador' : isOperator ? 'Operador' : 'Cliente'}</strong>
+          <h3>¡Bienvenido/a, {currentUser?.name || 'Operador'}!</h3>
+          <p>
+            {currentUser?.username || 'Operador@CloudPedidos.onmicrosoft.com'} • Rol activo:{' '}
+            <span className="role-highlight">
+              {isAdmin ? 'Administrador' : isOperator ? 'Operador' : 'Cliente'}
+            </span>
           </p>
         </div>
-      </header>
+      </div>
 
-      {/* Renderizado condicional del dashboard según el perfil */}
+      {/* Renderizado según Rol */}
       {isAdmin ? (
-        <AdminDashboard />
+        <AdminDashboardView />
       ) : isOperator ? (
-        <OperatorDashboard />
+        <OperatorDashboardView />
       ) : (
-        <ClientDashboard />
+        <CustomerDashboardView />
       )}
     </div>
   );

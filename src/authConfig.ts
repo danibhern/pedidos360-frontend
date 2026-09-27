@@ -13,7 +13,8 @@ export const msalConfig: Configuration = {
 };
 
 export const loginRequest = {
-  scopes: ["openid", "profile"]
+  scopes: ["openid", "profile"],
+  prompt: "select_account", 
 };
 
 export const apiRequest = {

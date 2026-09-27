@@ -1,7 +1,6 @@
 import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
-import { loginRequest } from "./authConfig";
 import { RequireAuth } from "./RequireAuth";
 import { RequireRole } from "./RequireRole";
 import { useRoles } from "./useRoles";
@@ -14,60 +13,40 @@ import { Reports } from "./Reports";
 import { Audit } from "./Audit";
 import "./App.css";
 
-
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {
     admin: "Admin",
     operador: "Operador",
-    cliente: "Cliente"
+    cliente: "Cliente",
   };
-
 
   return labels[role] ?? role;
 }
-
 
 function Nav() {
   const { instance, accounts, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const { loading: rolesLoading, roles } = useRoles();
 
-
   const activeAccount = accounts[0] ?? instance.getActiveAccount();
-
 
   const isAdmin = roles.includes("admin");
   const isOperador = roles.includes("operador");
   const isCliente = roles.includes("cliente");
-
-
-  const handleLogin = () => {
-    if (inProgress === InteractionStatus.None) {
-      instance
-        .loginRedirect({
-          ...loginRequest,
-          prompt: "select_account"
-        })
-        .catch((error) => console.error("Error al iniciar sesión:", error));
-    }
-  };
-
 
   const handleLogout = () => {
     if (inProgress === InteractionStatus.None) {
       instance
         .logoutRedirect({
           account: activeAccount ?? undefined,
-          postLogoutRedirectUri: window.location.origin
+          postLogoutRedirectUri: window.location.origin,
         })
         .catch((error) => console.error("Error al cerrar sesión:", error));
     }
   };
 
-
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "nav-link active" : "nav-link";
-
 
   return (
     <header className="navbar">
@@ -75,13 +54,11 @@ function Nav() {
         ⚡ <span>Pedidos360</span>
       </div>
 
-
       {isAuthenticated && (
         <nav className="nav-links">
           <NavLink to="/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
-
 
           {!rolesLoading && (isAdmin || isOperador) && (
             <NavLink to="/catalog" className={linkClass}>
@@ -89,13 +66,11 @@ function Nav() {
             </NavLink>
           )}
 
-
           {!rolesLoading && (
             <NavLink to="/orders" className={linkClass}>
               {isCliente ? "Mis pedidos" : "Pedidos"}
             </NavLink>
           )}
-
 
           {!rolesLoading && isAdmin && (
             <>
@@ -103,11 +78,9 @@ function Nav() {
                 Administración
               </NavLink>
 
-
               <NavLink to="/reports" className={linkClass}>
                 Reportes
               </NavLink>
-
 
               <NavLink to="/audit" className={linkClass}>
                 Auditoría
@@ -117,18 +90,16 @@ function Nav() {
         </nav>
       )}
 
-
       <div className="nav-account">
         {isAuthenticated && activeAccount && (
-            <span className="account-name">
+          <span className="account-name">
             {!rolesLoading && roles.length > 0
-            ? `Bienvenido/a, ${roles.map(roleLabel).join(", ")}`
-            : `Bienvenido/a, ${activeAccount.name ?? activeAccount.username}`}
+              ? `Bienvenido/a, ${roles.map(roleLabel).join(", ")}`
+              : `Bienvenido/a, ${activeAccount.name ?? activeAccount.username}`}
           </span>
-      )}
+        )}
 
-
-        {isAuthenticated ? (
+        {isAuthenticated && (
           <button
             type="button"
             className="btn btn-logout"
@@ -137,23 +108,11 @@ function Nav() {
           >
             Cerrar sesión
           </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-login"
-            onClick={handleLogin}
-            disabled={inProgress !== InteractionStatus.None}
-          >
-            {inProgress !== InteractionStatus.None
-              ? "Cargando..."
-              : "Iniciar sesión"}
-          </button>
         )}
       </div>
     </header>
   );
 }
-
 
 function AccessDenied() {
   return (
@@ -165,27 +124,22 @@ function AccessDenied() {
   );
 }
 
-
 export default function App() {
   return (
     <BrowserRouter>
       <div className="layout">
         <Nav />
 
-
         <main className="container">
           <Routes>
             <Route path="/" element={<Landing />} />
 
-
             <Route element={<RequireAuth />}>
               <Route path="/dashboard" element={<Dashboard />} />
-
 
               <Route element={<RequireRole roles={["admin", "operador"]} />}>
                 <Route path="/catalog" element={<Catalog />} />
               </Route>
-
 
               <Route
                 element={
@@ -195,17 +149,14 @@ export default function App() {
                 <Route path="/orders" element={<Orders />} />
               </Route>
 
-
               <Route element={<RequireRole roles={["admin"]} />}>
                 <Route path="/admin" element={<AdminDemo />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/audit" element={<Audit />} />
               </Route>
 
-
               <Route path="/sin-permiso" element={<AccessDenied />} />
             </Route>
-
 
             <Route path="*" element={<Landing />} />
           </Routes>

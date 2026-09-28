@@ -8,7 +8,7 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (inProgress !== InteractionStatus.None) {
-    return <p>Comprobando sesión…</p>;
+    return <p className="loading-state">Comprobando sesión…</p>;
   }
 
   if (!isAuthenticated) {

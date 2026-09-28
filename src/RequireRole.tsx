@@ -15,7 +15,7 @@ export function RequireRole({ roles }: RequireRoleProps) {
   }
 
   if (loading) {
-    return <p>Cargando permisos…</p>;
+    return <p className="loading-state">Cargando permisos…</p>;
   }
 
   const isAllowed = roles.some((role) => userRoles.includes(role));

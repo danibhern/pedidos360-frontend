@@ -300,11 +300,15 @@ export function Orders() {
     : orders;
 
   if (rolesLoading) {
-    return <p>Cargando pedidos…</p>;
+    return <p className="loading-state">Cargando pedidos…</p>;
   }
 
   return (
-    <section className={canManage ? "orders-page--manage" : ""}>
+    <section
+      className={
+        canManage ? "orders-page orders-page--manage" : "orders-page"
+      }
+    >
       <h1>{isCliente ? "Mis pedidos" : "Gestión de pedidos"}</h1>
 
       <p>
@@ -314,7 +318,7 @@ export function Orders() {
       </p>
 
       {canCreate && (
-        <section className="card">
+        <section className="card order-create-card">
           <h2>Crear pedido</h2>
 
           <p>
@@ -330,7 +334,7 @@ export function Orders() {
           )}
 
           {!catalogLoading && !catalogError && products.length > 0 && (
-            <div className="form-row">
+            <div className="form-row order-item-form">
               <div className="form-group">
                 <label htmlFor="order-product">Producto</label>
 
@@ -391,7 +395,7 @@ export function Orders() {
             <>
               <h3>Productos del pedido</h3>
 
-              <ul>
+              <ul className="order-selected-items">
                 {items.map((item) => {
                   const product = products.find(
                     (entry) => entry.productId === item.productId
@@ -399,11 +403,14 @@ export function Orders() {
 
                   return (
                     <li key={item.productId}>
-                      {product?.name ?? item.productId} — cantidad:{" "}
-                      {item.quantity}{" "}
+                      <span>
+                        {product?.name ?? item.productId} — cantidad:{" "}
+                        {item.quantity}
+                      </span>
+
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="btn-secondary order-remove-button"
                         onClick={() =>
                           setItems((current) =>
                             current.filter(
@@ -428,7 +435,7 @@ export function Orders() {
 
           <button
             type="button"
-            className="btn-primary"
+            className="btn-primary order-create-submit"
             onClick={() => {
               void handleCreateOrder();
             }}
@@ -463,7 +470,7 @@ export function Orders() {
       {statusSuccess && <p role="status">{statusSuccess}</p>}
 
       {ordersLoading ? (
-        <p>Cargando pedidos…</p>
+        <p className="loading-state">Cargando pedidos…</p>
       ) : ordersError ? (
         <p role="alert">{ordersError}</p>
       ) : orders.length === 0 ? (

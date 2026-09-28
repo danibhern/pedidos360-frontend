@@ -1,10 +1,7 @@
 /* Container Principal */
 .catalog-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #0f172a;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Cabecera y Controles */
@@ -69,54 +66,55 @@
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
+  font-family: inherit;
   font-weight: 600;
   font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.btn-primary:hover {
-  background: #047857;
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: #000000;
-  border: 1px solid #cbd5e1;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.85rem;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s ease;
 }
 
-.btn-secondary:hover {
+.btn-primary:hover:not(:disabled) {
+  background: #047857;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
   background: #e2e8f0;
 }
 
-.product-card p:last-child {
-    display: inline-flex;
-    width: fit-content;
-    margin: 0;
-    padding: 5px 10px;
-    color: var(--green-800);
-    background: var(--green-100);
-    border-radius: 19px;
-    font-size: 0.82rem;
-    margin-top: 15px;
-    font-weight: 700;
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .btn-warning {
   background: #fff7ed;
   color: #c2410c;
   border: 1px solid #ffedd5;
-  padding: 8px 14px;
+  padding: 9px 14px;
   border-radius: 8px;
+  font-family: inherit;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.2s ease;
@@ -285,10 +283,8 @@
 /* Modal de Formulario (Crear/Editar) */
 .form-modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  padding: 24px;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
@@ -298,12 +294,15 @@
 }
 
 .product-form {
-  background: #30a984a1;
-  padding: 28px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
-  width: 100%;
-  max-width: 480px;
-  box-shadow: 20px 20px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  width: min(480px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.45);
 }
 
 .product-form h2 {
@@ -326,23 +325,38 @@
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
+  width: 100%;
   padding: 10px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
   font-size: 0.95rem;
   outline: none;
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   border-color: #059669;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled,
+.form-group select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: end;
   gap: 12px;
 }
 
@@ -363,9 +377,16 @@
   margin-bottom: 20px;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 40px;
-  color: #64748b;
-  font-weight: 500;
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
 }

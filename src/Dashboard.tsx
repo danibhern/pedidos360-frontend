@@ -1,307 +1,369 @@
-import React from 'react';
-import { useMsal } from '@azure/msal-react';
-import { useRoles } from './useRoles';
-import './Dashboard.css';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useMsal } from "@azure/msal-react";
+import { getOrders, type Order, type OrderStatus } from "./api/catalogApi";
+import { useRoles } from "./useRoles";
+import "./Dashboard.css";
 
-// Formateador de moneda CLP
-const clp = new Intl.NumberFormat('es-CL', {
-  style: 'currency',
-  currency: 'CLP',
-  maximumFractionDigits: 0
+const STATUS_LABELS: Record<
+  OrderStatus,
+  { text: string; badgeClass: string }
+> = {
+  CREADO: { text: "Creado (pendiente)", badgeClass: "badge-warning" },
+  ACEPTADO: { text: "Aceptado", badgeClass: "badge-info" },
+  EN_PREPARACION: { text: "En preparación", badgeClass: "badge-info" },
+  DESPACHADO: { text: "Despachado", badgeClass: "badge-primary" },
+  ENTREGADO: { text: "Entregado", badgeClass: "badge-success" },
+  CANCELADO: { text: "Cancelado", badgeClass: "badge-danger" }
+};
+
+const ORDER_STEPS: OrderStatus[] = [
+  "CREADO",
+  "ACEPTADO",
+  "EN_PREPARACION",
+  "DESPACHADO",
+  "ENTREGADO"
+];
+
+const ACTIVE_STATUSES: OrderStatus[] = [
+  "ACEPTADO",
+  "EN_PREPARACION",
+  "DESPACHADO"
+];
+
+const dateTimeFormatter = new Intl.DateTimeFormat("es-CL", {
+  dateStyle: "medium",
+  timeStyle: "short"
 });
 
-export type OrderStatus =
-  | 'CREADO'
-  | 'ACEPTADO'
-  | 'EN_PREPARACION'
-  | 'DESPACHADO'
-  | 'ENTREGADO'
-  | 'CANCELADO';
+function formattedDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Fecha no disponible"
+    : dateTimeFormatter.format(date);
+}
 
-const STATUS_LABELS: Record<OrderStatus, { text: string; badgeClass: string }> = {
-  CREADO: { text: 'Creado (Pendiente)', badgeClass: 'badge-warning' },
-  ACEPTADO: { text: 'Aceptado', badgeClass: 'badge-info' },
-  EN_PREPARACION: { text: 'En Preparación', badgeClass: 'badge-info' },
-  DESPACHADO: { text: 'Despachado', badgeClass: 'badge-primary' },
-  ENTREGADO: { text: 'Entregado', badgeClass: 'badge-success' },
-  CANCELADO: { text: 'Cancelado', badgeClass: 'badge-danger' }
-};
+function orderCode(order: Order): string {
+  return `#${order.orderId.slice(0, 8)}`;
+}
 
-// ============================================================================
-// DATOS MOCK
-// ============================================================================
+function StatusBadge({ status }: { status: OrderStatus }) {
+  const info = STATUS_LABELS[status];
 
-const ADMIN_KPIS = {
-  ventasTotales: 18450000,
-  pedidosTotales: 1280,
-  usuariosActivos: 142,
-  resumenVentasHora: [
-    { hora: '09:00', ventas: 1250000, pedidos: 24 },
-    { hora: '12:00', ventas: 3400000, pedidos: 68 },
-    { hora: '15:00', ventas: 5100000, pedidos: 95 },
-    { hora: '18:00', ventas: 8700000, pedidos: 150 }
-  ]
-};
+  return (
+    <span className={`badge ${info?.badgeClass ?? "badge-info"}`}>
+      {info?.text ?? status}
+    </span>
+  );
+}
 
-const OPERATOR_DATA = {
-  pedidosPendientesCount: 6,
-  pedidosEnCursoCount: 12,
-  colaProcesamiento: [
-    { id: 'PED-9012', cliente: 'Tech Solutions SpA', items: 5, estado: 'CREADO' as OrderStatus, fecha: '2026-09-27 15:30' },
-    { id: 'PED-9011', cliente: 'Empresa Alfa Ltda', items: 2, estado: 'ACEPTADO' as OrderStatus, fecha: '2026-09-27 15:10' },
-    { id: 'PED-9010', cliente: 'Juan Pérez', items: 1, estado: 'EN_PREPARACION' as OrderStatus, fecha: '2026-09-27 14:45' },
-    { id: 'PED-9009', cliente: 'Comercial Beta', items: 8, estado: 'CREADO' as OrderStatus, fecha: '2026-09-27 14:20' }
-  ]
-};
+function AdminDashboardView({ orders }: { orders: Order[] }) {
+  const pending = orders.filter((order) => order.status === "CREADO").length;
+  const inProgress = orders.filter((order) =>
+    ACTIVE_STATUSES.includes(order.status)
+  ).length;
+  const delivered = orders.filter(
+    (order) => order.status === "ENTREGADO"
+  ).length;
 
-const CUSTOMER_DATA = {
-  misPedidosTotales: 8,
-  pedidosEnCamino: 2,
-  totalInvertido: 184900,
-  pedidoActivo: {
-    id: 'PED-8821',
-    estado: 'DESPACHADO' as OrderStatus,
-    fechaCreacion: '2026-09-27 10:15',
-    total: 45000,
-    etapas: [
-      { nombre: 'CREADO', completado: true },
-      { nombre: 'ACEPTADO', completado: true },
-      { nombre: 'EN_PREPARACION', completado: true },
-      { nombre: 'DESPACHADO', completado: true },
-      { nombre: 'ENTREGADO', completado: false }
-    ]
-  },
-  ultimosPedidos: [
-    { id: 'PED-8821', fecha: '2026-09-27', total: 45000, estado: 'DESPACHADO' as OrderStatus },
-    { id: 'PED-8790', fecha: '2026-09-18', total: 89900, estado: 'ENTREGADO' as OrderStatus },
-    { id: 'PED-8651', fecha: '2026-09-10', total: 50000, estado: 'ENTREGADO' as OrderStatus }
-  ]
-};
-
-// ============================================================================
-// VISTAS SEGÚN ROL
-// ============================================================================
-
-function AdminDashboardView() {
   return (
     <div className="dashboard-content">
       <div className="kpi-grid">
         <div className="kpi-card highlight">
-          <span className="kpi-title">Ventas Totales</span>
-          <span className="kpi-value">{clp.format(ADMIN_KPIS.ventasTotales)}</span>
+          <span className="kpi-title">Pedidos registrados</span>
+          <span className="kpi-value">{orders.length}</span>
+        </div>
+        <div className="kpi-card highlight-orange">
+          <span className="kpi-title">Pendientes</span>
+          <span className="kpi-value">{pending}</span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-title">Pedidos Totales</span>
-          <span className="kpi-value">{ADMIN_KPIS.pedidosTotales}</span>
+          <span className="kpi-title">En curso</span>
+          <span className="kpi-value">{inProgress}</span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-title">Usuarios Activos (IDaaS)</span>
-          <span className="kpi-value">{ADMIN_KPIS.usuariosActivos}</span>
+          <span className="kpi-title">Entregados</span>
+          <span className="kpi-value">{delivered}</span>
         </div>
       </div>
 
-      <div className="dashboard-section" style={{ marginTop: '24px' }}>
-        <h3>Ventas y Pedidos por Hora</h3>
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>Tramo Horario</th>
-              <th>Pedidos Procesados</th>
-              <th>Monto Facturado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ADMIN_KPIS.resumenVentasHora.map((row) => (
-              <tr key={row.hora}>
-                <td><strong>{row.hora} hrs</strong></td>
-                <td>{row.pedidos} pedidos</td>
-                <td>{clp.format(row.ventas)}</td>
+      <div className="dashboard-section" style={{ marginTop: 24 }}>
+        <h3>Indicadores pendientes de integrar</h3>
+        <p>
+          Ventas totales y usuarios activos todavía no están disponibles:
+          los pedidos actuales no almacenan montos y esta API no proporciona
+          una métrica de usuarios activos. No se muestran cifras simuladas.
+        </p>
+      </div>
+
+      <div className="dashboard-section" style={{ marginTop: 24 }}>
+        <h3>Pedidos recientes</h3>
+        {orders.length === 0 ? (
+          <p>Aún no hay pedidos registrados.</p>
+        ) : (
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Fecha</th>
+                <th>Estado</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.slice(0, 5).map((order) => (
+                <tr key={order.orderId}>
+                  <td>{orderCode(order)}</td>
+                  <td>{formattedDate(order.createdAt)}</td>
+                  <td><StatusBadge status={order.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p><Link to="/orders">Ver todos los pedidos</Link></p>
       </div>
     </div>
   );
 }
 
-function OperatorDashboardView() {
+function OperatorDashboardView({ orders }: { orders: Order[] }) {
+  const pending = orders.filter((order) => order.status === "CREADO");
+  const inProgress = orders.filter((order) =>
+    ACTIVE_STATUSES.includes(order.status)
+  );
+  const queue = [...pending, ...inProgress].slice(0, 8);
+
   return (
     <div className="dashboard-content">
       <div className="kpi-grid">
         <div className="kpi-card highlight-orange">
-          <span className="kpi-title">Pedidos Pendientes (CREADO)</span>
-          <span className="kpi-value">{OPERATOR_DATA.pedidosPendientesCount}</span>
+          <span className="kpi-title">Pedidos pendientes (creados)</span>
+          <span className="kpi-value">{pending.length}</span>
         </div>
         <div className="kpi-card highlight">
-          <span className="kpi-title">Pedidos en Curso</span>
-          <span className="kpi-value">{OPERATOR_DATA.pedidosEnCursoCount}</span>
+          <span className="kpi-title">Pedidos en curso</span>
+          <span className="kpi-value">{inProgress.length}</span>
         </div>
       </div>
 
-      <div className="dashboard-section" style={{ marginTop: '24px' }}>
-        <h3>Cola de Pedidos por Procesar</h3>
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>ID Pedido</th>
-              <th>Cliente</th>
-              <th>Fecha / Hora</th>
-              <th>Ítems</th>
-              <th>Estado Actual</th>
-            </tr>
-          </thead>
-          <tbody>
-            {OPERATOR_DATA.colaProcesamiento.map((item) => {
-              const statusInfo = STATUS_LABELS[item.estado];
-              return (
-                <tr key={item.id}>
-                  <td><strong>{item.id}</strong></td>
-                  <td>{item.cliente}</td>
-                  <td>{item.fecha}</td>
-                  <td>{item.items} u.</td>
-                  <td>
-                    <span className={`badge ${statusInfo.badgeClass}`}>
-                      {statusInfo.text}
-                    </span>
-                  </td>
+      <div className="dashboard-section" style={{ marginTop: 24 }}>
+        <h3>Cola de pedidos por gestionar</h3>
+        {queue.length === 0 ? (
+          <p>No hay pedidos pendientes ni en curso.</p>
+        ) : (
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Fecha</th>
+                <th>Productos</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {queue.map((order) => (
+                <tr key={order.orderId}>
+                  <td><strong>{orderCode(order)}</strong></td>
+                  <td>{formattedDate(order.createdAt)}</td>
+                  <td>{order.items.length}</td>
+                  <td><StatusBadge status={order.status} /></td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p><Link to="/orders">Gestionar pedidos</Link></p>
       </div>
     </div>
   );
 }
 
-function CustomerDashboardView() {
-  const { misPedidosTotales, pedidosEnCamino, totalInvertido, pedidoActivo, ultimosPedidos } = CUSTOMER_DATA;
+function CustomerDashboardView({ orders }: { orders: Order[] }) {
+  const latest = orders.slice(0, 5);
+  const active = orders.find(
+    (order) =>
+      order.status !== "ENTREGADO" && order.status !== "CANCELADO"
+  );
+  const currentStep = active ? ORDER_STEPS.indexOf(active.status) : -1;
+  const onTheWay = orders.filter(
+    (order) => order.status === "DESPACHADO"
+  ).length;
 
   return (
     <div className="dashboard-content">
-      {/* Encabezado con Botón Descargar PDF */}
       <div className="dashboard-header-row">
-        <h2>Mi Panel de Compras</h2>
-        <button type="button" className="btn-pdf" onClick={() => alert('Generando PDF...')}>
-          📄 Descargar Historial (PDF)
-        </button>
+        <h2>Mi panel de pedidos</h2>
+        <Link to="/orders">Ver mis pedidos</Link>
       </div>
 
-      {/* Tarjetas KPI de la Imagen */}
-      <div className="kpi-grid" style={{ marginTop: '16px', marginBottom: '24px' }}>
+      <div className="kpi-grid" style={{ marginTop: 16, marginBottom: 24 }}>
         <div className="kpi-card">
-          <span className="kpi-title">MIS PEDIDOS TOTALES</span>
-          <span className="kpi-value">{misPedidosTotales}</span>
+          <span className="kpi-title">Mis pedidos</span>
+          <span className="kpi-value">{orders.length}</span>
         </div>
-
         <div className="kpi-card border-accent">
-          <span className="kpi-title">PEDIDOS EN CAMINO</span>
-          <span className="kpi-value">{pedidosEnCamino}</span>
-        </div>
-
-        <div className="kpi-card">
-          <span className="kpi-title">TOTAL INVERTIDO</span>
-          <span className="kpi-value">{clp.format(totalInvertido)}</span>
+          <span className="kpi-title">Pedidos despachados</span>
+          <span className="kpi-value">{onTheWay}</span>
         </div>
       </div>
 
-      {/* Seguimiento de Pedido Activo */}
-      <div className="dashboard-section" style={{ marginBottom: '24px' }}>
-        <h3>Seguimiento de tu Pedido Activo ({pedidoActivo.id})</h3>
-        <p className="subtitle" style={{ margin: '0 0 16px 0', color: '#64748b' }}>
-          Fecha de solicitud: <strong>{pedidoActivo.fechaCreacion}</strong> • Total:{' '}
-          <strong>{clp.format(pedidoActivo.total)}</strong>
-        </p>
-
-        <div className="stepper-container">
-          {pedidoActivo.etapas.map((etapa, idx) => (
-            <div
-              key={etapa.nombre}
-              className={`stepper-step ${etapa.completado ? 'step-completed' : ''}`}
-            >
-              <div className="step-number">{idx + 1}</div>
-              <span className="step-label">{STATUS_LABELS[etapa.nombre as OrderStatus]?.text || etapa.nombre}</span>
+      <div className="dashboard-section" style={{ marginBottom: 24 }}>
+        {active ? (
+          <>
+            <h3>Seguimiento del pedido {orderCode(active)}</h3>
+            <p className="subtitle">
+              Creado: {formattedDate(active.createdAt)} · Estado actual:{" "}
+              <StatusBadge status={active.status} />
+            </p>
+            <div className="stepper-container">
+              {ORDER_STEPS.map((step, index) => (
+                <div
+                  key={step}
+                  className={`stepper-step ${
+                    index <= currentStep ? "step-completed" : ""
+                  }`}
+                >
+                  <div className="step-number">{index + 1}</div>
+                  <span className="step-label">{STATUS_LABELS[step].text}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <>
+            <h3>Seguimiento</h3>
+            <p>No tienes pedidos activos en este momento.</p>
+          </>
+        )}
       </div>
 
-      {/* Historial */}
       <div className="dashboard-section">
-        <h3>Historial de Tus Últimos Pedidos</h3>
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>ID Pedido</th>
-              <th>Fecha</th>
-              <th>Monto Total</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ultimosPedidos.map((pedido) => {
-              const statusInfo = STATUS_LABELS[pedido.estado];
-              return (
-                <tr key={pedido.id}>
-                  <td><strong>{pedido.id}</strong></td>
-                  <td>{pedido.fecha}</td>
-                  <td>{clp.format(pedido.total)}</td>
-                  <td>
-                    <span className={`badge ${statusInfo.badgeClass}`}>
-                      {statusInfo.text}
-                    </span>
-                  </td>
+        <h3>Mis últimos pedidos</h3>
+        {latest.length === 0 ? (
+          <p>Aún no has creado pedidos.</p>
+        ) : (
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {latest.map((order) => (
+                <tr key={order.orderId}>
+                  <td><strong>{orderCode(order)}</strong></td>
+                  <td>{formattedDate(order.createdAt)}</td>
+                  <td><StatusBadge status={order.status} /></td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
 
-// ============================================================================
-// COMPONENTE PRINCIPAL
-// ============================================================================
 export function Dashboard() {
-  const { accounts } = useMsal();
-  const currentUser = accounts[0];
-  const { roles, loading } = useRoles();
+  const { instance, accounts } = useMsal();
+  const { roles, loading: rolesLoading } = useRoles();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const isAdmin = roles.includes('admin');
-  const isOperator = roles.includes('operador');
+  const isAdmin = roles.includes("admin");
+  const isOperator = roles.includes("operador");
+  const isCustomer = roles.includes("cliente");
+  const currentUser = instance.getActiveAccount() ?? accounts[0];
 
-  if (loading) {
-    return <p className="loading-state">Cargando métricas de actividad…</p>;
+  useEffect(() => {
+    if (rolesLoading) {
+      return;
+    }
+
+    if (!isAdmin && !isOperator && !isCustomer) {
+      setOrdersLoading(false);
+      return;
+    }
+
+    const account = instance.getActiveAccount() ?? accounts[0];
+
+    if (!account) {
+      setError("No hay una sesión activa.");
+      setOrdersLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setOrdersLoading(true);
+    setError("");
+
+    getOrders(instance, account)
+      .then((loadedOrders) => {
+        if (!cancelled) {
+          setOrders(
+            [...loadedOrders].sort((a, b) =>
+              b.createdAt.localeCompare(a.createdAt)
+            )
+          );
+        }
+      })
+      .catch((reason: unknown) => {
+        console.error(reason);
+        if (!cancelled) {
+          setError("No se pudieron cargar los pedidos del Dashboard.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setOrdersLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accounts, instance, rolesLoading, isAdmin, isOperator, isCustomer]);
+
+  if (rolesLoading || ordersLoading) {
+    return <p className="loading-state">Cargando actividad…</p>;
+  }
+
+  if (!isAdmin && !isOperator && !isCustomer) {
+    return <p role="alert">No se reconoció un rol autorizado.</p>;
   }
 
   return (
     <div className="dashboard-container">
-      {/* CUADRADO SUPERIOR (BANNER DE BIENVENIDA) */}
       <div className="welcome-banner">
         <div className="welcome-avatar">
-          {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'O'}
+          {(currentUser?.name ?? currentUser?.username ?? "U")
+            .charAt(0)
+            .toUpperCase()}
         </div>
         <div className="welcome-info">
-          <h3>¡Bienvenido/a, {currentUser?.name || 'Operador'}!</h3>
+          <h3>
+            ¡Bienvenido/a, {currentUser?.name ?? currentUser?.username ?? "usuario"}!
+          </h3>
           <p>
-            {currentUser?.username || 'Operador@CloudPedidos.onmicrosoft.com'} • Rol activo:{' '}
+            {currentUser?.username ?? "Sesión iniciada"} · Rol activo:{" "}
             <span className="role-highlight">
-              {isAdmin ? 'Administrador' : isOperator ? 'Operador' : 'Cliente'}
+              {isAdmin ? "Administrador" : isOperator ? "Operador" : "Cliente"}
             </span>
           </p>
         </div>
       </div>
 
-      {/* Renderizado según Rol */}
-      {isAdmin ? (
-        <AdminDashboardView />
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : isAdmin ? (
+        <AdminDashboardView orders={orders} />
       ) : isOperator ? (
-        <OperatorDashboardView />
+        <OperatorDashboardView orders={orders} />
       ) : (
-        <CustomerDashboardView />
+        <CustomerDashboardView orders={orders} />
       )}
     </div>
   );

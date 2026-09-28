@@ -83,23 +83,24 @@ type OrdersResponse = {
   items: Order[];
 };
 
+type UpdateOrderStatusResponse = {
+  message: string;
+  order: Order;
+};
+
 async function getAccessToken(
   instance: IPublicClientApplication,
   account: AccountInfo
 ): Promise<string> {
   try {
-    const tokenResponse =
-      await instance.acquireTokenSilent({
-        account,
-        scopes: apiConfig.scopes
-      });
+    const tokenResponse = await instance.acquireTokenSilent({
+      account,
+      scopes: apiConfig.scopes
+    });
 
     return tokenResponse.accessToken;
   } catch (error) {
-    if (
-      error instanceof
-      InteractionRequiredAuthError
-    ) {
+    if (error instanceof InteractionRequiredAuthError) {
       await instance.acquireTokenRedirect({
         account,
         scopes: apiConfig.scopes
@@ -114,19 +115,13 @@ export async function getCatalog(
   instance: IPublicClientApplication,
   account: AccountInfo
 ): Promise<CatalogProduct[]> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  const accessToken = await getAccessToken(instance, account);
 
-  const response = await fetch(
-    `${apiConfig.baseUrl}/catalog`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
+  const response = await fetch(`${apiConfig.baseUrl}/catalog`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
     }
-  );
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -134,8 +129,7 @@ export async function getCatalog(
     );
   }
 
-  const data =
-    (await response.json()) as CatalogResponse;
+  const data = (await response.json()) as CatalogResponse;
 
   return data.items;
 }
@@ -144,19 +138,13 @@ export async function getOrders(
   instance: IPublicClientApplication,
   account: AccountInfo
 ): Promise<Order[]> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  const accessToken = await getAccessToken(instance, account);
 
-  const response = await fetch(
-    `${apiConfig.baseUrl}/orders`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
+  const response = await fetch(`${apiConfig.baseUrl}/orders`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
     }
-  );
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -164,8 +152,7 @@ export async function getOrders(
     );
   }
 
-  const data =
-    (await response.json()) as OrdersResponse;
+  const data = (await response.json()) as OrdersResponse;
 
   return data.items;
 }
@@ -175,22 +162,16 @@ export async function createOrder(
   account: AccountInfo,
   payload: CreateOrderPayload
 ): Promise<Order> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  const accessToken = await getAccessToken(instance, account);
 
-  const response = await fetch(
-    `${apiConfig.baseUrl}/orders`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    }
-  );
+  const response = await fetch(`${apiConfig.baseUrl}/orders`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
 
   const rawResponse = await response.text();
 
@@ -227,25 +208,23 @@ export async function createOrder(
   return data.order as Order;
 }
 
-export async function createCatalogProduct(
+export async function updateOrderStatus(
   instance: IPublicClientApplication,
   account: AccountInfo,
-  payload: CreateCatalogProductPayload
-): Promise<CatalogProduct> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  orderId: string,
+  status: OrderStatus
+): Promise<Order> {
+  const accessToken = await getAccessToken(instance, account);
 
   const response = await fetch(
-    `${apiConfig.baseUrl}/catalog`,
+    `${apiConfig.baseUrl}/orders/${encodeURIComponent(orderId)}/status`,
     {
-      method: "POST",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ status })
     }
   );
 
@@ -255,14 +234,70 @@ export async function createCatalogProduct(
     let message = rawResponse;
 
     try {
-      const errorData = JSON.parse(
-        rawResponse
-      ) as {
+      const errorData = JSON.parse(rawResponse) as {
         message?: string;
       };
 
-      message =
-        errorData.message ?? rawResponse;
+      message = errorData.message ?? rawResponse;
+    } catch {
+      // La respuesta de error puede no ser JSON.
+    }
+
+    throw new Error(
+      `No se pudo cambiar el estado (${response.status}): ${message}`
+    );
+  }
+
+  let data: UpdateOrderStatusResponse;
+
+  try {
+    data = JSON.parse(rawResponse) as UpdateOrderStatusResponse;
+  } catch {
+    throw new Error(
+      "La API cambió el estado, pero no devolvió JSON válido."
+    );
+  }
+
+  if (
+    !data.order ||
+    data.order.orderId !== orderId ||
+    data.order.status !== status
+  ) {
+    throw new Error(
+      "La API no confirmó el nuevo estado del pedido."
+    );
+  }
+
+  return data.order;
+}
+
+export async function createCatalogProduct(
+  instance: IPublicClientApplication,
+  account: AccountInfo,
+  payload: CreateCatalogProductPayload
+): Promise<CatalogProduct> {
+  const accessToken = await getAccessToken(instance, account);
+
+  const response = await fetch(`${apiConfig.baseUrl}/catalog`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const rawResponse = await response.text();
+
+  if (!response.ok) {
+    let message = rawResponse;
+
+    try {
+      const errorData = JSON.parse(rawResponse) as {
+        message?: string;
+      };
+
+      message = errorData.message ?? rawResponse;
     } catch {
       // La respuesta de error puede no ser JSON.
     }
@@ -275,20 +310,14 @@ export async function createCatalogProduct(
   let data: CreateCatalogProductResponse;
 
   try {
-    data = JSON.parse(
-      rawResponse
-    ) as CreateCatalogProductResponse;
+    data = JSON.parse(rawResponse) as CreateCatalogProductResponse;
   } catch {
     throw new Error(
       "La API respondió correctamente, pero no devolvió JSON válido."
     );
   }
 
-  if (
-    !data.product ||
-    typeof data.product.productId !==
-      "string"
-  ) {
+  if (!data.product || typeof data.product.productId !== "string") {
     throw new Error(
       "La API respondió correctamente, pero no devolvió el producto creado."
     );
@@ -303,10 +332,7 @@ export async function updateProduct(
   productId: string,
   payload: UpdateCatalogProductPayload
 ): Promise<CatalogProduct> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  const accessToken = await getAccessToken(instance, account);
 
   const response = await fetch(
     `${apiConfig.baseUrl}/catalog/${encodeURIComponent(productId)}`,
@@ -326,17 +352,12 @@ export async function updateProduct(
     let message = rawResponse;
 
     try {
-      const errorData = JSON.parse(
-        rawResponse
-      ) as {
+      const errorData = JSON.parse(rawResponse) as {
         message?: string;
         error?: string;
       };
 
-      message =
-        errorData.message ??
-        errorData.error ??
-        rawResponse;
+      message = errorData.message ?? errorData.error ?? rawResponse;
     } catch {
       // La respuesta de error puede no ser JSON.
     }
@@ -349,20 +370,14 @@ export async function updateProduct(
   let data: UpdateCatalogProductResponse;
 
   try {
-    data = JSON.parse(
-      rawResponse
-    ) as UpdateCatalogProductResponse;
+    data = JSON.parse(rawResponse) as UpdateCatalogProductResponse;
   } catch {
     throw new Error(
       "La API respondió correctamente, pero no devolvió JSON válido."
     );
   }
 
-  if (
-    !data.product ||
-    typeof data.product.productId !==
-      "string"
-  ) {
+  if (!data.product || typeof data.product.productId !== "string") {
     throw new Error(
       "La API respondió correctamente, pero no devolvió el producto actualizado."
     );
@@ -376,10 +391,7 @@ export async function deleteProduct(
   account: AccountInfo,
   productId: string
 ): Promise<CatalogProduct> {
-  const accessToken = await getAccessToken(
-    instance,
-    account
-  );
+  const accessToken = await getAccessToken(instance, account);
 
   const response = await fetch(
     `${apiConfig.baseUrl}/catalog/${encodeURIComponent(productId)}`,
@@ -397,17 +409,12 @@ export async function deleteProduct(
     let message = rawResponse;
 
     try {
-      const errorData = JSON.parse(
-        rawResponse
-      ) as {
+      const errorData = JSON.parse(rawResponse) as {
         message?: string;
         error?: string;
       };
 
-      message =
-        errorData.message ??
-        errorData.error ??
-        rawResponse;
+      message = errorData.message ?? errorData.error ?? rawResponse;
     } catch {
       // La respuesta de error puede no ser JSON.
     }
@@ -420,9 +427,7 @@ export async function deleteProduct(
   let data: DeleteCatalogProductResponse;
 
   try {
-    data = JSON.parse(
-      rawResponse
-    ) as DeleteCatalogProductResponse;
+    data = JSON.parse(rawResponse) as DeleteCatalogProductResponse;
   } catch {
     throw new Error(
       "La API respondió correctamente, pero no devolvió JSON válido."

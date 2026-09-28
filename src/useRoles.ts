@@ -1,16 +1,44 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState
+} from "react";
 import { useMsal } from "@azure/msal-react";
 import { acquireApiToken } from "./api/client";
 import { decodeJwt } from "./lib/jwt";
 
-export type AppRole = "admin" | "operador" | "cliente";
+export type AppRole =
+  | "admin"
+  | "operador"
+  | "cliente";
 
 type RolesState = {
   loading: boolean;
   roles: AppRole[];
 };
 
-function isAppRole(value: string): value is AppRole {
+function normalizeRole(
+  value: string
+): string {
+  const role = value
+    .trim()
+    .toLowerCase();
+
+  // El access token del Cliente trae "client".
+  // Dentro de React usamos "cliente".
+  if (role === "client") {
+    return "cliente";
+  }
+
+  if (role === "operator") {
+    return "operador";
+}
+
+  return role;
+}
+
+function isAppRole(
+  value: string
+): value is AppRole {
   return (
     value === "admin" ||
     value === "operador" ||
@@ -19,21 +47,28 @@ function isAppRole(value: string): value is AppRole {
 }
 
 export function useRoles(): RolesState {
-  const { instance, accounts } = useMsal();
+  const {
+    instance,
+    accounts
+  } = useMsal();
 
-  const [state, setState] = useState<RolesState>({
-    loading: true,
-    roles: []
-  });
+  const [state, setState] =
+    useState<RolesState>({
+      loading: true,
+      roles: []
+    });
 
   useEffect(() => {
-    const account = accounts[0] ?? instance.getActiveAccount();
+    const account =
+      instance.getActiveAccount() ??
+      accounts[0];
 
     if (!account) {
       setState({
         loading: false,
         roles: []
       });
+
       return;
     }
 
@@ -41,22 +76,40 @@ export function useRoles(): RolesState {
 
     const loadRoles = async () => {
       try {
-        const accessToken = await acquireApiToken(instance, account);
+        const accessToken =
+          await acquireApiToken(
+            instance,
+            account
+          );
 
         if (cancelled) {
           return;
         }
 
-        const tokenRoles = decodeJwt(accessToken)?.roles ?? [];
+        const tokenRoles =
+          decodeJwt(accessToken)
+            ?.roles ?? [];
 
-        console.log("Roles del access token:", tokenRoles);
+        const roles = tokenRoles
+          .filter(
+            (
+              role
+            ): role is string =>
+              typeof role ===
+              "string"
+          )
+          .map(normalizeRole)
+          .filter(isAppRole);
 
         setState({
           loading: false,
-          roles: tokenRoles.filter(isAppRole)
+          roles
         });
       } catch (error) {
-        console.error("No fue posible obtener los roles:", error);
+        console.error(
+          "No fue posible obtener los roles:",
+          error
+        );
 
         if (!cancelled) {
           setState({
@@ -67,7 +120,7 @@ export function useRoles(): RolesState {
       }
     };
 
-    loadRoles();
+    void loadRoles();
 
     return () => {
       cancelled = true;

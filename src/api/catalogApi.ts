@@ -18,6 +18,36 @@ type CatalogResponse = {
   items: CatalogProduct[];
 };
 
+export type CreateCatalogProductPayload = {
+  productId: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+};
+
+type CreateCatalogProductResponse = {
+  message: string;
+  product: CatalogProduct;
+};
+
+export type UpdateCatalogProductPayload = {
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+};
+
+type UpdateCatalogProductResponse = {
+  message: string;
+  product: CatalogProduct;
+};
+
+type DeleteCatalogProductResponse = {
+  message: string;
+  product: CatalogProduct;
+};
+
 export type OrderStatus =
   | "CREADO"
   | "ACEPTADO"
@@ -58,14 +88,18 @@ async function getAccessToken(
   account: AccountInfo
 ): Promise<string> {
   try {
-    const tokenResponse = await instance.acquireTokenSilent({
-      account,
-      scopes: apiConfig.scopes
-    });
+    const tokenResponse =
+      await instance.acquireTokenSilent({
+        account,
+        scopes: apiConfig.scopes
+      });
 
     return tokenResponse.accessToken;
   } catch (error) {
-    if (error instanceof InteractionRequiredAuthError) {
+    if (
+      error instanceof
+      InteractionRequiredAuthError
+    ) {
       await instance.acquireTokenRedirect({
         account,
         scopes: apiConfig.scopes
@@ -80,19 +114,29 @@ export async function getCatalog(
   instance: IPublicClientApplication,
   account: AccountInfo
 ): Promise<CatalogProduct[]> {
-  const accessToken = await getAccessToken(instance, account);
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
 
-  const response = await fetch(`${apiConfig.baseUrl}/catalog`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
+  const response = await fetch(
+    `${apiConfig.baseUrl}/catalog`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
     }
-  });
+  );
 
   if (!response.ok) {
-    throw new Error(`No se pudo obtener el catálogo (${response.status}).`);
+    throw new Error(
+      `No se pudo obtener el catálogo (${response.status}).`
+    );
   }
 
-  const data = (await response.json()) as CatalogResponse;
+  const data =
+    (await response.json()) as CatalogResponse;
+
   return data.items;
 }
 
@@ -100,13 +144,19 @@ export async function getOrders(
   instance: IPublicClientApplication,
   account: AccountInfo
 ): Promise<Order[]> {
-  const accessToken = await getAccessToken(instance, account);
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
 
-  const response = await fetch(`${apiConfig.baseUrl}/orders`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
+  const response = await fetch(
+    `${apiConfig.baseUrl}/orders`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
     }
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -114,7 +164,9 @@ export async function getOrders(
     );
   }
 
-  const data = (await response.json()) as OrdersResponse;
+  const data =
+    (await response.json()) as OrdersResponse;
+
   return data.items;
 }
 
@@ -123,16 +175,22 @@ export async function createOrder(
   account: AccountInfo,
   payload: CreateOrderPayload
 ): Promise<Order> {
-  const accessToken = await getAccessToken(instance, account);
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
 
-  const response = await fetch(`${apiConfig.baseUrl}/orders`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
+  const response = await fetch(
+    `${apiConfig.baseUrl}/orders`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
 
   const rawResponse = await response.text();
 
@@ -169,50 +227,217 @@ export async function createOrder(
   return data.order as Order;
 }
 
-// dani esto lo tiene en el lambda de catalog ??
-export async function createProduct(
+export async function createCatalogProduct(
   instance: IPublicClientApplication,
   account: AccountInfo,
-  product: { name: string; description: string; price: number; stock: number }
+  payload: CreateCatalogProductPayload
 ): Promise<CatalogProduct> {
-  const accessToken = await getAccessToken(instance, account);
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
 
-  const response = await fetch(`${apiConfig.baseUrl}/catalog`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(product)
-  });
+  const response = await fetch(
+    `${apiConfig.baseUrl}/catalog`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const rawResponse = await response.text();
 
   if (!response.ok) {
-    throw new Error(`No se pudo crear el producto (${response.status}).`);
+    let message = rawResponse;
+
+    try {
+      const errorData = JSON.parse(
+        rawResponse
+      ) as {
+        message?: string;
+      };
+
+      message =
+        errorData.message ?? rawResponse;
+    } catch {
+      // La respuesta de error puede no ser JSON.
+    }
+
+    throw new Error(
+      `No se pudo crear el producto (${response.status}): ${message}`
+    );
   }
 
-  return (await response.json()) as CatalogProduct;
+  let data: CreateCatalogProductResponse;
+
+  try {
+    data = JSON.parse(
+      rawResponse
+    ) as CreateCatalogProductResponse;
+  } catch {
+    throw new Error(
+      "La API respondió correctamente, pero no devolvió JSON válido."
+    );
+  }
+
+  if (
+    !data.product ||
+    typeof data.product.productId !==
+      "string"
+  ) {
+    throw new Error(
+      "La API respondió correctamente, pero no devolvió el producto creado."
+    );
+  }
+
+  return data.product;
 }
 
 export async function updateProduct(
   instance: IPublicClientApplication,
   account: AccountInfo,
   productId: string,
-  product: { name: string; description: string; price: number; stock: number }
+  payload: UpdateCatalogProductPayload
 ): Promise<CatalogProduct> {
-  const accessToken = await getAccessToken(instance, account);
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
 
-  const response = await fetch(`${apiConfig.baseUrl}/catalog/${productId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(product)
-  });
+  const response = await fetch(
+    `${apiConfig.baseUrl}/catalog/${encodeURIComponent(productId)}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const rawResponse = await response.text();
 
   if (!response.ok) {
-    throw new Error(`No se pudo actualizar el producto (${response.status}).`);
+    let message = rawResponse;
+
+    try {
+      const errorData = JSON.parse(
+        rawResponse
+      ) as {
+        message?: string;
+        error?: string;
+      };
+
+      message =
+        errorData.message ??
+        errorData.error ??
+        rawResponse;
+    } catch {
+      // La respuesta de error puede no ser JSON.
+    }
+
+    throw new Error(
+      `No se pudo actualizar el producto (${response.status}): ${message}`
+    );
   }
 
-  return (await response.json()) as CatalogProduct;
+  let data: UpdateCatalogProductResponse;
+
+  try {
+    data = JSON.parse(
+      rawResponse
+    ) as UpdateCatalogProductResponse;
+  } catch {
+    throw new Error(
+      "La API respondió correctamente, pero no devolvió JSON válido."
+    );
+  }
+
+  if (
+    !data.product ||
+    typeof data.product.productId !==
+      "string"
+  ) {
+    throw new Error(
+      "La API respondió correctamente, pero no devolvió el producto actualizado."
+    );
+  }
+
+  return data.product;
+}
+
+export async function deleteProduct(
+  instance: IPublicClientApplication,
+  account: AccountInfo,
+  productId: string
+): Promise<CatalogProduct> {
+  const accessToken = await getAccessToken(
+    instance,
+    account
+  );
+
+  const response = await fetch(
+    `${apiConfig.baseUrl}/catalog/${encodeURIComponent(productId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  );
+
+  const rawResponse = await response.text();
+
+  if (!response.ok) {
+    let message = rawResponse;
+
+    try {
+      const errorData = JSON.parse(
+        rawResponse
+      ) as {
+        message?: string;
+        error?: string;
+      };
+
+      message =
+        errorData.message ??
+        errorData.error ??
+        rawResponse;
+    } catch {
+      // La respuesta de error puede no ser JSON.
+    }
+
+    throw new Error(
+      `No se pudo desactivar el producto (${response.status}): ${message}`
+    );
+  }
+
+  let data: DeleteCatalogProductResponse;
+
+  try {
+    data = JSON.parse(
+      rawResponse
+    ) as DeleteCatalogProductResponse;
+  } catch {
+    throw new Error(
+      "La API respondió correctamente, pero no devolvió JSON válido."
+    );
+  }
+
+  if (
+    !data.product ||
+    data.product.productId !== productId ||
+    data.product.active !== false
+  ) {
+    throw new Error(
+      "La API respondió correctamente, pero no confirmó la desactivación del producto."
+    );
+  }
+
+  return data.product;
 }

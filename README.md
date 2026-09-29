@@ -15,16 +15,16 @@ conceptos de la guía** (tenant, IDaaS, JWT, OAuth2, scopes, roles, guards).
 
 ## 1. Qué trae la aplicación
 
-| Pantalla | Ruta | Quién entra | Qué hace |
-| --- | --- | --- | --- |
-| **Login** | `/` | Público | Botón "Continuar con Microsoft" (`loginRedirect`). Si ya hay sesión, redirige al Dashboard. |
-| **Dashboard** | `/dashboard` | Cualquiera autenticado | Cambia de vista según el rol: KPIs + últimos pedidos (Admin), cola de pedidos por gestionar (Operador), stepper de seguimiento (Cliente). |
-| **Catálogo** | `/catalog` | Admin, Operador | Grilla/lista de productos con stock. Solo Admin crea, edita y desactiva (modal de formulario). |
-| **Pedidos** | `/orders` | Admin, Operador, Cliente | Cliente: crear pedido y ver historial. Operador/Admin: cola filtrable y cambio de estado según el flujo. |
-| **Administración** | `/admin` | Solo Admin | Marcador de posición del panel de administración. |
-| **Reportes** | `/reports` | Solo Admin | Marcador de posición (ventas, lead time, productos más solicitados). |
-| **Auditoría** | `/audit` | Solo Admin | Marcador de posición del registro de eventos. |
-| **Sin permiso** | `/sin-permiso` | Autenticado | Mensaje de acceso denegado. |
+| Pantalla           | Ruta           | Quién entra              | Qué hace                                                                                                                                  |
+| ------------------ | -------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Login**          | `/`            | Público                  | Botón "Continuar con Microsoft" (`loginRedirect`). Si ya hay sesión, redirige al Dashboard.                                               |
+| **Dashboard**      | `/dashboard`   | Cualquiera autenticado   | Cambia de vista según el rol: KPIs + últimos pedidos (Admin), cola de pedidos por gestionar (Operador), stepper de seguimiento (Cliente). |
+| **Catálogo**       | `/catalog`     | Admin, Operador          | Grilla/lista de productos con stock. Solo Admin crea, edita y desactiva (modal de formulario).                                            |
+| **Pedidos**        | `/orders`      | Admin, Operador, Cliente | Cliente: crear pedido y ver historial. Operador/Admin: cola filtrable y cambio de estado según el flujo.                                  |
+| **Administración** | `/admin`       | Solo Admin               | Marcador de posición del panel de administración.                                                                                         |
+| **Reportes**       | `/reports`     | Solo Admin               | Marcador de posición (ventas, lead time, productos más solicitados).                                                                      |
+| **Auditoría**      | `/audit`       | Solo Admin               | Marcador de posición del registro de eventos.                                                                                             |
+| **Sin permiso**    | `/sin-permiso` | Autenticado              | Mensaje de acceso denegado.                                                                                                               |
 
 ### Flujo de estados de un pedido
 
@@ -40,15 +40,15 @@ stepper de 5 pasos con los etapas completadas destacadas.
 
 Definidos en `.env` (`VITE_API_BASE_URL`) y llamados en `src/api/catalogApi.ts`:
 
-| Método | Ruta | Uso |
-| --- | --- | --- |
-| `GET` | `/catalog` | Listar productos |
-| `POST` | `/catalog` | Crear producto (Admin) |
-| `PUT` | `/catalog/{id}` | Actualizar producto (Admin) |
-| `DELETE` | `/catalog/{id}` | Desactivar producto (soft delete, Admin) |
-| `GET` | `/orders` | Listar pedidos |
-| `POST` | `/orders` | Crear pedido (Cliente) |
-| `PUT` | `/orders/{id}/status` | Cambiar estado (Operador/Admin) |
+| Método   | Ruta                  | Uso                                      |
+| -------- | --------------------- | ---------------------------------------- |
+| `GET`    | `/catalog`            | Listar productos                         |
+| `POST`   | `/catalog`            | Crear producto (Admin)                   |
+| `PUT`    | `/catalog/{id}`       | Actualizar producto (Admin)              |
+| `DELETE` | `/catalog/{id}`       | Desactivar producto (soft delete, Admin) |
+| `GET`    | `/orders`             | Listar pedidos                           |
+| `POST`   | `/orders`             | Crear pedido (Cliente)                   |
+| `PUT`    | `/orders/{id}/status` | Cambiar estado (Operador/Admin)          |
 
 Todas las peticiones van con `Authorization: Bearer <access_token>`.
 
@@ -102,7 +102,7 @@ En este proyecto el tenant aparece en un solo lugar —
 `src/authConfig.ts`:
 
 ```ts
-authority: `https://login.microsoftonline.com/${import.meta.env.VITE_AZURE_TENANT_ID}`
+authority: `https://login.microsoftonline.com/${import.meta.env.VITE_AZURE_TENANT_ID}`;
 ```
 
 Todo lo demás (usuarios de prueba, App Roles, permisos) se administra **fuera
@@ -114,24 +114,24 @@ es el código — es que el Tenant ID o el Client ID del `.env` apuntan a otra a
 
 ### 3.2 IDaaS
 
-**IDaaS** (*Identity as a Service*) es la categoría de servicios que entregamos
+**IDaaS** (_Identity as a Service_) es la categoría de servicios que entregamos
 identidad administrada: Microsoft Entra ID es el IDaaS que usa Pedidos360. La
 guía contrasta dos modalidades:
 
-| | Entra ID estándar | External ID / CIAM |
-| --- | --- | --- |
-| Qué es | Un directorio (no es un recurso ARM) | Un recurso de ARM |
-| Usuarios | Los crea el administrador del tenant | Se auto-registran |
-| Suscripción | No pide elegir suscripción | Pide suscripción + grupo de recursos |
-| Roles | App Roles + scopes | Solo scopes |
-| Uso en el curso | ✅ el que usa el proyecto | ❌ choca con Azure for Students |
+|                 | Entra ID estándar                    | External ID / CIAM                   |
+| --------------- | ------------------------------------ | ------------------------------------ |
+| Qué es          | Un directorio (no es un recurso ARM) | Un recurso de ARM                    |
+| Usuarios        | Los crea el administrador del tenant | Se auto-registran                    |
+| Suscripción     | No pide elegir suscripción           | Pide suscripción + grupo de recursos |
+| Roles           | App Roles + scopes                   | Solo scopes                          |
+| Uso en el curso | ✅ el que usa el proyecto            | ❌ choca con Azure for Students      |
 
 Este proyecto usa **Entra ID estándar**. Consecuencia práctica: los usuarios
 `admin@…`, `operador@…` y `cliente@…` los crea el administrador del tenant a
 mano, y los permisos se asignan como **App Roles** (no como scopes).
 
 Sobre **MFA / Conditional Access**: pedir por primera vez un token para la API
-(un recurso distinto al login) puede disparar un *step-up* de MFA. Es
+(un recurso distinto al login) puede disparar un _step-up_ de MFA. Es
 esperado — se completa una vez y después la renovación silenciosa funciona.
 
 ### 3.3 Los dos App Registrations
@@ -139,10 +139,10 @@ esperado — se completa una vez y después la renovación silenciosa funciona.
 El tenant tiene **dos** apps registradas porque representan dos roles distintos
 de OAuth2:
 
-| App | Rol OAuth2 | Configuración | Para qué |
-| --- | --- | --- | --- |
-| `Pedidos360-Frontend` | **Cliente público** | Plataforma **SPA**, Redirect URI `http://localhost:5173` | Corre en el navegador, pide el token en nombre del usuario. Usa Authorization Code + **PKCE** (sin client secret, porque no puede guardar secretos). |
-| `Pedidos360-API` | **Recurso protegido** | Sin plataforma cliente, *Expose an API* | Dueño de los datos. **No pide** tokens: los recibe y valida. Define los scopes (`orders.read`, `catalog.write`, …). |
+| App                   | Rol OAuth2            | Configuración                                            | Para qué                                                                                                                                             |
+| --------------------- | --------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Pedidos360-Frontend` | **Cliente público**   | Plataforma **SPA**, Redirect URI `http://localhost:5173` | Corre en el navegador, pide el token en nombre del usuario. Usa Authorization Code + **PKCE** (sin client secret, porque no puede guardar secretos). |
+| `Pedidos360-API`      | **Recurso protegido** | Sin plataforma cliente, _Expose an API_                  | Dueño de los datos. **No pide** tokens: los recibe y valida. Define los scopes (`orders.read`, `catalog.write`, …).                                  |
 
 La analogía de la guía: el Frontend es quien pide la llave en la portería; la
 API es la puerta con la cerradura. La llave solo sirve porque fue cortada para
@@ -158,23 +158,23 @@ En el código, cada lado usa **su propio** Client ID:
 Un **JWT** es un token firmado con tres partes: `header.payload.signature`.
 MSAL entrega dos distintos, y confundirlos es el error más común:
 
-| | ID token | **Access token** |
-| --- | --- | --- |
-| Para qué | Le dice al frontend **quién es** el usuario | Autoriza a **usar la API** |
-| `aud` | La app Frontend | La app Backend |
-| Dónde se pide | `loginRequest` (`openid`, `profile`) | `apiRequest` (`VITE_API_SCOPE`) |
-| Claims de rol | ❌ no está `roles` | ✅ sí está `roles` |
-| Dónde acaba | en `idTokenClaims` | en el header `Authorization` |
+|               | ID token                                    | **Access token**                |
+| ------------- | ------------------------------------------- | ------------------------------- |
+| Para qué      | Le dice al frontend **quién es** el usuario | Autoriza a **usar la API**      |
+| `aud`         | La app Frontend                             | La app Backend                  |
+| Dónde se pide | `loginRequest` (`openid`, `profile`)        | `apiRequest` (`VITE_API_SCOPE`) |
+| Claims de rol | ❌ no está `roles`                          | ✅ sí está `roles`              |
+| Dónde acaba   | en `idTokenClaims`                          | en el header `Authorization`    |
 
 Claims que el proyecto lee del access token:
 
-| Claim | Significado | Dónde se usa acá |
-| --- | --- | --- |
-| `aud` | Audiencia: para qué API fue emitido | Debe coincidir con el *Audience* del JWT Authorizer |
-| `iss` | Issuer: qué tenant lo emitió | Debe coincidir con el *Issuer URL* del Authorizer |
-| `scp` | Scopes delegados, separados por espacio | Permisos que el usuario tiene concedidos sobre la API |
-| `roles` | App Roles asignados al usuario | `useRoles.ts` → guards y navegación |
-| `exp` | Vencimiento (epoch) | Renovación silenciosa de MSAL |
+| Claim   | Significado                             | Dónde se usa acá                                      |
+| ------- | --------------------------------------- | ----------------------------------------------------- |
+| `aud`   | Audiencia: para qué API fue emitido     | Debe coincidir con el _Audience_ del JWT Authorizer   |
+| `iss`   | Issuer: qué tenant lo emitió            | Debe coincidir con el _Issuer URL_ del Authorizer     |
+| `scp`   | Scopes delegados, separados por espacio | Permisos que el usuario tiene concedidos sobre la API |
+| `roles` | App Roles asignados al usuario          | `useRoles.ts` → guards y navegación                   |
+| `exp`   | Vencimiento (epoch)                     | Renovación silenciosa de MSAL                         |
 
 **`src/lib/jwt.ts` decodifica, no valida.** Hace `atob()` del payload para
 inspección; jamás verifica la firma. La validación real ocurre en el **JWT
@@ -187,12 +187,12 @@ seguro usarla como autorización.
 La versión del token depende de `requestedAccessTokenVersion` en el manifest de
 la app Backend. Hay que usar un juego **coherente**:
 
-| | v1 (por defecto) | **v2 (recomendado, lo que usa el proyecto)** |
-| --- | --- | --- |
-| `iss` | `https://sts.windows.net/<TENANT>/` | `https://login.microsoftonline.com/<TENANT>/v2.0` |
-| `aud` | `api://<client-id-backend>` | `<client-id-backend>` (GUID pelado) |
-| Authorizer → Issuer | `…/sts.windows.net/<TENANT>/` | `…/login.microsoftonline.com/<TENANT>/v2.0` |
-| Authorizer → Audience | `api://<client-id-backend>` | `<client-id-backend>` |
+|                       | v1 (por defecto)                    | **v2 (recomendado, lo que usa el proyecto)**      |
+| --------------------- | ----------------------------------- | ------------------------------------------------- |
+| `iss`                 | `https://sts.windows.net/<TENANT>/` | `https://login.microsoftonline.com/<TENANT>/v2.0` |
+| `aud`                 | `api://<client-id-backend>`         | `<client-id-backend>` (GUID pelado)               |
+| Authorizer → Issuer   | `…/sts.windows.net/<TENANT>/`       | `…/login.microsoftonline.com/<TENANT>/v2.0`       |
+| Authorizer → Audience | `api://<client-id-backend>`         | `<client-id-backend>`                             |
 
 Mezclar el issuer de v2 con el audience estilo v1 hace que API Gateway rechace
 el token con **401** sin llegar a la Lambda.
@@ -201,10 +201,10 @@ el token con **401** sin llegar a la Lambda.
 
 Dos claims distintos, y cada uno resuelve una pregunta distinta:
 
-- **`scp`** → *"¿qué permisos tiene concedidos sobre la API?"*
+- **`scp`** → _"¿qué permisos tiene concedidos sobre la API?"_
   Ej.: `"orders.read orders.write"`. Configurado en **Expose an API** de la app
   Backend, y concedido al Frontend con **Grant admin consent**.
-- **`roles`** → *"¿qué rol de negocio tiene la persona?"*
+- **`roles`** → _"¿qué rol de negocio tiene la persona?"_
   Ej.: `["Operador"]`. Configurado en **App Roles**, y asignado por usuario en
   **Enterprise applications → Pedidos360-API → Users and groups**.
 
@@ -220,7 +220,7 @@ Este proyecto autoriza por **`roles`**. `VITE_API_SCOPE` trae un solo scope
 **MSAL** es la librería que habla el protocolo OAuth2/OIDC por ti. El flujo aquí:
 
 1. `main.tsx` crea la `PublicClientApplication` y llama **`await
-   instance.initialize()`** — obligatorio en `@azure/msal-browser` v3+. Sin eso:
+instance.initialize()`** — obligatorio en `@azure/msal-browser` v3+. Sin eso:
    `BrowserAuthError: uninitialized_public_client_application`.
 2. Tras un login exitoso se fija la cuenta activa
    (`setActiveAccount`) para que el resto de la app sepa con quién opera.
@@ -237,14 +237,14 @@ Este proyecto autoriza por **`roles`**. `VITE_API_SCOPE` trae un solo scope
 
 ### 3.7 Guards de ruta
 
-En una SPA con varias vistas, cada ruta necesita responder *"¿puede este
-usuario ver esto?"* antes de renderizar. Eso es un **guard**. En
-`react-router-dom` se implementan como *layout routes*: un componente que
+En una SPA con varias vistas, cada ruta necesita responder _"¿puede este
+usuario ver esto?"_ antes de renderizar. Eso es un **guard**. En
+`react-router-dom` se implementan como _layout routes_: un componente que
 envuelve un `<Outlet/>`, del que cuelgan todas las rutas protegidas.
 
-| Guard | Pregunta | Si falla |
-| --- | --- | --- |
-| `RequireAuth` | ¿Hay sesión activa? | Redirige a `/` (el login) |
+| Guard         | Pregunta                          | Si falla                  |
+| ------------- | --------------------------------- | ------------------------- |
+| `RequireAuth` | ¿Hay sesión activa?               | Redirige a `/` (el login) |
 | `RequireRole` | ¿Tiene alguno de estos App Roles? | Redirige a `/sin-permiso` |
 
 `App.tsx` los anida, así que cada vista nueva es **una línea** de `<Route>` y
@@ -253,7 +253,6 @@ el guard no se reescribe:
 ```tsx
 <Route element={<RequireAuth />}>
   <Route path="/dashboard" element={<Dashboard />} />
-
   <Route element={<RequireRole roles={["admin", "operador"]} />}>
     <Route path="/catalog" element={<Catalog />} />
   </Route>
@@ -278,7 +277,7 @@ El frontend es solo la mitad. Del otro lado:
 3. **CORS** — sin esto nada funciona. Como las llamadas llevan el header
    `Authorization`, el navegador manda primero un **preflight `OPTIONS`**. Si la
    HTTP API no lo responde con `Access-Control-Allow-Origin`, la consola
-   muestra el error de CORS — y es *independiente* de la autenticación (el
+   muestra el error de CORS — y es _independiente_ de la autenticación (el
    preflight ni siquiera lleva token).
 4. **Lambda** — el Authorizer validó que el token es auténtico, pero no sabe
    reglas de negocio ("solo Admin edita el catálogo"). Eso se resuelve dentro de
@@ -301,13 +300,13 @@ Copia el archivo de ejemplo y completa los valores **de tu tenant**:
 cp .env.example .env
 ```
 
-| Variable | Qué es | Dónde se obtiene |
-| --- | --- | --- |
-| `VITE_AZURE_CLIENT_ID` | Application (client) ID de la app **Frontend** | Frontend → Overview |
-| `VITE_AZURE_TENANT_ID` | Directory (tenant) ID | Frontend → Overview |
-| `VITE_AZURE_REDIRECT_URI` | Redirect URI de la SPA | `http://localhost:5173` |
-| `VITE_API_BASE_URL` | URL del API Gateway | `https://<api-id>.execute-api.<region>.amazonaws.com` |
-| `VITE_API_SCOPE` | Scope de la app **Backend** | `api://<client-id-backend>/orders.read` |
+| Variable                  | Qué es                                         | Dónde se obtiene                                      |
+| ------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| `VITE_AZURE_CLIENT_ID`    | Application (client) ID de la app **Frontend** | Frontend → Overview                                   |
+| `VITE_AZURE_TENANT_ID`    | Directory (tenant) ID                          | Frontend → Overview                                   |
+| `VITE_AZURE_REDIRECT_URI` | Redirect URI de la SPA                         | `http://localhost:5173`                               |
+| `VITE_API_BASE_URL`       | URL del API Gateway                            | `https://<api-id>.execute-api.<region>.amazonaws.com` |
+| `VITE_API_SCOPE`          | Scope de la app **Backend**                    | `api://<client-id-backend>/orders.read`               |
 
 > No subas `.env` al repositorio. Ninguna variable `VITE_*` es secreta (acaban
 > en el bundle del navegador); la seguridad está en que el backend valide el
@@ -356,16 +355,3 @@ Backlog técnico:
 - Los claims del token se leen con `decodeJwt()` en el cliente; si en el futuro
   se necesita la identidad del usuario fuera del frontend, conviene migrar a
   `idTokenClaims` para no depender del token de la API para leer el perfil.
-
----
-
-## 8. Referencias
-
-- 📘 [Guía práctica v2 — Autenticación con Microsoft Entra ID](./docs/guia_entra_id_v2.html):
-  pasos completos (tenant, las dos apps, roles, MSAL, JWT Authorizer, CORS) y
-  la tabla de errores comunes con síntoma → causa → solución.
-- [jmcandia.github.io/cloud-native-ms-entra-id](https://jmcandia.github.io/cloud-native-ms-entra-id)
-  — guía de referencia de la que se adaptó este proyecto.
-- [jwt.ms](https://jwt.ms) — para pegar un access token y revisar `aud`, `iss`,
-  `scp`, `roles` y `exp`. **Es la herramienta clave** para diagnosticar un 401
-  antes de tocar el Authorizer.

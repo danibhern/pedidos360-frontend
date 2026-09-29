@@ -32,10 +32,33 @@
   margin-top: 0;
 }
 
-/* Producto + cantidad + botón en una sola fila alineada */
-.order-item-form {
+/* .form-row vive tambien en Catalog.css, pero Orders.tsx no importa ese archivo.
+   Sin esta definicion .order-item-form queda como bloque: los controles fluyen en
+   linea, el boton cae a una segunda fila y la regla responsive de 1 columna no
+   hace nada. Se declara antes que .order-item-form para que su
+   grid-template-columns de 3 columnas gane por orden de cascada. */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 12px;
+}
+
+/* Producto + cantidad + botón en una sola fila alineada.
+   Selector compuesto a proposito: Catalog.css tambien define .form-row con 2
+   columnas, asi que con un selector simple el resultado dependia del orden en
+   que Vite inyectara cada hoja. Con dos clases gana siempre esta regla. */
+.form-row.order-item-form {
   grid-template-columns: minmax(0, 1fr) 130px auto;
   margin-bottom: 4px;
+}
+
+/* .form-group llega con margin-bottom:16px desde Catalog.css. Dentro de la fila
+   el gap ya separa los controles, y ese margen sobrante hacia que la base no
+   alineara: el boton quedaba 16px mas abajo que los campos aun con
+   align-items:end. */
+.form-row.order-item-form > .form-group {
+  margin-bottom: 0;
 }
 
 .order-item-form > .btn-secondary {
@@ -335,7 +358,7 @@
     min-height: 0;
   }
 
-  .order-item-form {
+  .form-row.order-item-form {
     grid-template-columns: 1fr;
   }
 

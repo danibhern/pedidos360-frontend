@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1143.0",
+    "@aws-sdk/util-dynamodb": "^3.996.9",
     "@azure/msal-browser": "^5.19.0",
     "@azure/msal-react": "^5.6.0",
     "react": "^19.2.8",
@@ -28,5 +30,21 @@
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
-  }
+  },
+  "description": "Plataforma de gestión de productos electrónicos (**DSY1107 · Desarrollo Cloud Native I**). SPA en **React + Vite + TypeScript** que se autentica contra **Microsoft Entra ID** con **MSAL** y consume una API protegida en **AWS API Gateway (HTTP API) + Lambda**.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danibhern/pedidos360-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danibhern/pedidos360-frontend/issues"
+  },
+  "homepage": "https://github.com/danibhern/pedidos360-frontend#readme"
 }

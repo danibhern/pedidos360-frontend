@@ -14,14 +14,21 @@ export const msalConfig: Configuration = {
 
 export const loginRequest = {
   scopes: ["openid", "profile"],
-  prompt: "select_account", 
+  prompt: "select_account"
 };
 
+const apiScopes: string[] = (
+  import.meta.env.VITE_API_SCOPE ?? ""
+)
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean);
+
 export const apiRequest = {
-  scopes: [import.meta.env.VITE_API_SCOPE]
+  scopes: apiScopes
 };
 
 export const apiConfig = {
   baseUrl: import.meta.env.VITE_API_BASE_URL,
-  scopes: [import.meta.env.VITE_API_SCOPE]
+  scopes: apiScopes
 };

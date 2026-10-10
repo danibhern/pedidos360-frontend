@@ -1,0 +1,5 @@
+{
+  "ordersCreate": {
+    "ORDERS_TABLE": "Pedidos360Orders"
+  }
+}

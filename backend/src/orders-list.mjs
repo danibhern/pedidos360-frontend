@@ -74,9 +74,9 @@ export const handler = async (event) => {
   const roles = getRoles(claims.roles);
 
   const canSeeAll =
-  roles.includes("admin") ||
-  roles.includes("operator") ||
-  roles.includes("operador");
+    roles.includes("admin") ||
+    roles.includes("operator") ||
+    roles.includes("operador");
 
   const isClient =
     roles.includes("client") ||

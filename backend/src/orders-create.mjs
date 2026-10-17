@@ -5,13 +5,18 @@ import {
   GetCommand,
   PutCommand
 } from "@aws-sdk/lib-dynamodb";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const sns = new SNSClient({});
+
 
 const ORDERS_TABLE = "Pedidos360Orders";
 const CATALOG_TABLE = "Pedidos360Catalog";
 const MAX_ITEMS = 20;
+
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -23,6 +28,7 @@ function jsonResponse(statusCode, payload) {
   };
 }
 
+
 function getRoles(rawRoles) {
   if (Array.isArray(rawRoles)) {
     return rawRoles
@@ -30,15 +36,19 @@ function getRoles(rawRoles) {
       .map((role) => role.trim().toLowerCase());
   }
 
+
   if (typeof rawRoles !== "string") {
     return [];
   }
 
+
   const value = rawRoles.trim();
+
 
   if (!value) {
     return [];
   }
+
 
   // API Gateway puede entregar los roles como "[cliente]"
   // o "[operador]", además de un arreglo real.
@@ -48,9 +58,11 @@ function getRoles(rawRoles) {
   ) {
     const contents = value.slice(1, -1).trim();
 
+
     if (!contents) {
       return [];
     }
+
 
     return contents
       .split(",")
@@ -64,12 +76,15 @@ function getRoles(rawRoles) {
       .filter(Boolean);
   }
 
+
   return [value.toLowerCase()];
 }
+
 
 export const handler = async (event) => {
   const claims =
     event.requestContext?.authorizer?.jwt?.claims;
+
 
   if (!claims) {
     return jsonResponse(401, {
@@ -77,7 +92,9 @@ export const handler = async (event) => {
     });
   }
 
+
   const roles = getRoles(claims.roles);
+
 
   if (
     !roles.includes("client") &&
@@ -91,6 +108,7 @@ export const handler = async (event) => {
     });
   }
 
+
   const customerId =
     typeof claims.oid === "string" &&
     claims.oid.trim()
@@ -100,6 +118,7 @@ export const handler = async (event) => {
         ? claims.sub.trim()
         : "";
 
+
   if (!customerId) {
     return jsonResponse(401, {
       message:
@@ -107,7 +126,9 @@ export const handler = async (event) => {
     });
   }
 
+
   let body;
+
 
   try {
     body = JSON.parse(event.body ?? "");
@@ -117,6 +138,7 @@ export const handler = async (event) => {
         "El cuerpo de la solicitud debe ser JSON válido."
     });
   }
+
 
   if (
     typeof body !== "object" ||
@@ -130,6 +152,7 @@ export const handler = async (event) => {
     });
   }
 
+
   if (
     body.items.length === 0 ||
     body.items.length > MAX_ITEMS
@@ -140,8 +163,10 @@ export const handler = async (event) => {
     });
   }
 
+
   const items = [];
   const seenProductIds = new Set();
+
 
   for (const item of body.items) {
     if (
@@ -155,12 +180,15 @@ export const handler = async (event) => {
       });
     }
 
+
     const productId =
       typeof item.productId === "string"
         ? item.productId.trim()
         : "";
 
+
     const quantity = item.quantity;
+
 
     if (
       !productId ||
@@ -173,6 +201,7 @@ export const handler = async (event) => {
       });
     }
 
+
     if (seenProductIds.has(productId)) {
       return jsonResponse(400, {
         message:
@@ -180,13 +209,16 @@ export const handler = async (event) => {
       });
     }
 
+
     seenProductIds.add(productId);
+
 
     items.push({
       productId,
       quantity
     });
   }
+
 
   try {
     for (const item of items) {
@@ -200,6 +232,7 @@ export const handler = async (event) => {
         })
       );
 
+
       if (
         !result.Item ||
         result.Item.active !== true
@@ -211,7 +244,9 @@ export const handler = async (event) => {
       }
     }
 
+
     const now = new Date().toISOString();
+
 
     const order = {
       orderId: randomUUID(),
@@ -222,6 +257,7 @@ export const handler = async (event) => {
       updatedAt: now
     };
 
+
     await docClient.send(
       new PutCommand({
         TableName: ORDERS_TABLE,
@@ -230,6 +266,38 @@ export const handler = async (event) => {
           "attribute_not_exists(orderId)"
       })
     );
+
+
+    // Publica el evento PedidoCreado en el topic SNS.
+    // Si la publicación falla, el pedido ya quedó guardado:
+    // la respuesta al cliente no depende de la mensajería.
+    try {
+      await sns.send(
+        new PublishCommand({
+          TopicArn: process.env.TOPIC_ARN,
+          Message: JSON.stringify({
+            type: "PedidoCreado",
+            eventId: randomUUID(),
+            timestamp: now,
+            pedidoId: order.orderId,
+            customerId: order.customerId,
+            productos: order.items
+          }),
+          MessageAttributes: {
+            tipo_evento: {
+              DataType: "String",
+              StringValue: "PedidoCreado"
+            }
+          }
+        })
+      );
+    } catch (eventError) {
+      console.error(
+        "Pedido guardado, pero no se pudo publicar el evento PedidoCreado:",
+        eventError
+      );
+    }
+
 
     return jsonResponse(201, {
       message:
@@ -241,6 +309,7 @@ export const handler = async (event) => {
       "Error creando pedido:",
       error
     );
+
 
     return jsonResponse(500, {
       message:

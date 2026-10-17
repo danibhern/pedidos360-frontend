@@ -49,12 +49,12 @@ functions:
   ordersCreate:
     name: orders-create
     handler: src/orders-create.handler
-    environment:
-      ORDERS_TABLE: ${file(./config/environment.dev.json):ordersCreate.ORDERS_TABLE}
+    environment: ${file(./config/environment.dev.json):ordersCreate}
 
   ordersStatusUpdate:
     name: orders-status-update
     handler: src/orders-status-update.handler
+    environment: ${file(./config/environment.dev.json):ordersStatusUpdate}
 
 resources:
   extensions: ${file(./config/resource-extensions.dev.json)}
